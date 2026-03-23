@@ -36,6 +36,7 @@ id = "autoresearch"
 [orchestrator.env.env_args]
 max_experiments = 5            # short episodes for proof-of-concept
 sandbox_pool_size = 2
+sandbox_gpu_ids = [2, 3]       # reserve GPUs 0-1 for inference + trainer
 
 [orchestrator.algorithm]
 name = "grpo"

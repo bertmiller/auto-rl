@@ -45,9 +45,10 @@ class AutoresearchSandboxPool:
     dedicated GPU. Containers are reused across episodes after cleanup.
     """
 
-    def __init__(self, size: int = 16, image: str = DOCKER_IMAGE):
+    def __init__(self, size: int = 16, image: str = DOCKER_IMAGE, gpu_ids: list[int] | None = None):
         self.size = size
         self.image = image
+        self.gpu_ids = gpu_ids if gpu_ids is not None else list(range(size))
         self._client = docker.from_env()
         self._available: asyncio.Queue[Sandbox] = asyncio.Queue()
         self._all: dict[str, Sandbox] = {}
@@ -58,7 +59,8 @@ class AutoresearchSandboxPool:
             return
         loop = asyncio.get_event_loop()
         for i in range(self.size):
-            sandbox = await loop.run_in_executor(None, self._create_sandbox, i)
+            gpu_id = self.gpu_ids[i % len(self.gpu_ids)]
+            sandbox = await loop.run_in_executor(None, self._create_sandbox, gpu_id)
             self._all[sandbox.id] = sandbox
             await self._available.put(sandbox)
         self._initialized = True

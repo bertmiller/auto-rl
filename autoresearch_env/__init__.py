@@ -10,7 +10,7 @@ from datasets import Dataset
 
 from .env import AutoresearchEnv
 
-SYSTEM_PROMPT = """\
+SYSTEM_PROMPT_TEMPLATE = """\
 You are an ML research agent. Your task is to improve the val_bpb
 (validation bits per byte) of a small GPT training script by running
 experiments autonomously.
@@ -35,16 +35,16 @@ The research loop:
 If a run crashes, read run.log to diagnose. Attempt one fix.
 If the fix also crashes, revert and try a different idea.
 
-You have 15 experiments. Use them to make meaningful, targeted progress.
+You have {max_experiments} experiments. Use them to make meaningful, targeted progress.
 """
 
 DATASET_REPEAT_N = 10_000
 
 
-def _build_dataset() -> Dataset:
+def _build_dataset(system_prompt: str) -> Dataset:
     task = {
         "task_id": "autoresearch-baseline",
-        "prompt": SYSTEM_PROMPT,
+        "prompt": system_prompt,
         "answer": 0.975,  # Karpathy's best from ~90-experiment sessions
         "info": {
             "baseline_commit": "HEAD",
@@ -57,20 +57,26 @@ def load_environment(
     max_experiments: int = 15,
     sandbox_pool_size: int = 16,
     sandbox_image: str = "autoresearch-sandbox:latest",
+    sandbox_gpu_ids: list[int] | None = None,
     **kwargs,
 ) -> AutoresearchEnv:
     """
     Prime-rl / verifiers entrypoint.
 
-    Returns a fully configured AutoresearchEnv ready for rollouts.
+    Args:
+        sandbox_gpu_ids: Explicit list of GPU device IDs for sandbox containers.
+                         E.g. [2, 3] to reserve GPUs 0-1 for inference/trainer.
+                         Defaults to [0, 1, ..., sandbox_pool_size-1].
     """
-    dataset = _build_dataset()
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(max_experiments=max_experiments)
+    dataset = _build_dataset(system_prompt)
 
     return AutoresearchEnv(
         dataset=dataset,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=system_prompt,
         max_experiments=max_experiments,
         sandbox_pool_size=sandbox_pool_size,
         sandbox_image=sandbox_image,
+        sandbox_gpu_ids=sandbox_gpu_ids,
         **kwargs,
     )
