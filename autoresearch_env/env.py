@@ -53,8 +53,7 @@ class AutoresearchEnv(vf.StatefulToolEnv):
     def __init__(
         self,
         max_experiments: int = 15,
-        sandbox_pool_size: int = 16,
-        sandbox_image: str = "autoresearch-sandbox:latest",
+        sandbox_pool_size: int = 2,
         sandbox_gpu_ids: list[int] | None = None,
         **kwargs,
     ):
@@ -66,7 +65,6 @@ class AutoresearchEnv(vf.StatefulToolEnv):
         self.max_experiments = max_experiments
         self.sandbox_pool = AutoresearchSandboxPool(
             size=sandbox_pool_size,
-            image=sandbox_image,
             gpu_ids=sandbox_gpu_ids,
         )
         # Set module-level pool reference for sandbox operations

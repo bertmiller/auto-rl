@@ -1,55 +1,51 @@
 """
 Sandbox layer for autoresearch RL environment.
 
-Each sandbox is a Docker container with:
-- karpathy/autoresearch cloned at HEAD
-- uv sync completed, prepare.py run (TinyStories data + tokenizer ready)
-- PyTorch + CUDA, no cold-start compilation cost
-- A dedicated GPU for the duration of the episode
+Each sandbox is an isolated directory clone of karpathy/autoresearch
+with a dedicated GPU assigned via CUDA_VISIBLE_DEVICES. No Docker required.
+
+Pre-provisioning:
+  1. Clone karpathy/autoresearch to AUTORESEARCH_BASE_REPO (default /workspace/autoresearch)
+  2. Run: cd $AUTORESEARCH_BASE_REPO && uv sync && uv run prepare.py
+  Sandboxes are created as copies of this base repo.
 """
 
 from __future__ import annotations
 
 import asyncio
-import io
 import json
 import logging
 import os
 import re
-import tarfile
+import shutil
 import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
-import docker
-from docker.models.containers import Container
-
 log = logging.getLogger(__name__)
 
-DOCKER_IMAGE = "autoresearch-sandbox:latest"
-REPO_DIR = "/workspace/autoresearch"
+BASE_REPO = Path(os.environ.get("AUTORESEARCH_BASE_REPO", "/workspace/autoresearch"))
+SANDBOXES_DIR = Path(os.environ.get("AUTORESEARCH_SANDBOXES_DIR", "/workspace/sandboxes"))
 TRAIN_TIMEOUT = 330  # 5.5min hard cap (5min train + 30s buffer)
 
 
 @dataclass
 class Sandbox:
     id: str
-    container: Container
+    path: Path
     gpu_id: int
 
 
 class AutoresearchSandboxPool:
     """
-    Pre-provisions and manages a pool of Docker containers, each with a
-    dedicated GPU. Containers are reused across episodes after cleanup.
+    Manages a pool of isolated directory sandboxes, each pinned to a GPU
+    via CUDA_VISIBLE_DEVICES. Sandboxes are reused across episodes after reset.
     """
 
-    def __init__(self, size: int = 16, image: str = DOCKER_IMAGE, gpu_ids: list[int] | None = None):
+    def __init__(self, size: int = 2, gpu_ids: list[int] | None = None, **kwargs):
         self.size = size
-        self.image = image
         self.gpu_ids = gpu_ids if gpu_ids is not None else list(range(size))
-        self._client = docker.from_env()
         self._available: asyncio.Queue[Sandbox] = asyncio.Queue()
         self._all: dict[str, Sandbox] = {}
         self._initialized = False
@@ -57,33 +53,26 @@ class AutoresearchSandboxPool:
     async def initialize(self) -> None:
         if self._initialized:
             return
+        SANDBOXES_DIR.mkdir(parents=True, exist_ok=True)
         loop = asyncio.get_event_loop()
         for i in range(self.size):
             gpu_id = self.gpu_ids[i % len(self.gpu_ids)]
-            sandbox = await loop.run_in_executor(None, self._create_sandbox, gpu_id)
+            sandbox = await loop.run_in_executor(None, self._create_sandbox, i, gpu_id)
             self._all[sandbox.id] = sandbox
             await self._available.put(sandbox)
         self._initialized = True
-        log.info("Sandbox pool initialized: %d containers", self.size)
+        log.info("Sandbox pool initialized: %d sandboxes, GPUs %s", self.size, self.gpu_ids)
 
-    def _create_sandbox(self, gpu_id: int) -> Sandbox:
-        sid = f"autoresearch-{uuid.uuid4().hex[:8]}"
-        container = self._client.containers.run(
-            self.image,
-            name=sid,
-            detach=True,
-            tty=True,
-            device_requests=[
-                docker.types.DeviceRequest(
-                    device_ids=[str(gpu_id)],
-                    capabilities=[["gpu"]],
-                )
-            ],
-            working_dir=REPO_DIR,
-            command="sleep infinity",
-        )
-        log.info("Created sandbox %s on GPU %d", sid, gpu_id)
-        return Sandbox(id=sid, container=container, gpu_id=gpu_id)
+    def _create_sandbox(self, index: int, gpu_id: int) -> Sandbox:
+        sid = f"sandbox-{index}"
+        sandbox_path = SANDBOXES_DIR / sid
+        if sandbox_path.exists():
+            # Reset existing sandbox instead of re-cloning
+            self._reset_sandbox_dir(sandbox_path)
+        else:
+            shutil.copytree(BASE_REPO, sandbox_path, symlinks=True)
+        log.info("Created sandbox %s at %s on GPU %d", sid, sandbox_path, gpu_id)
+        return Sandbox(id=sid, path=sandbox_path, gpu_id=gpu_id)
 
     async def acquire(self) -> str:
         if not self._initialized:
@@ -96,77 +85,88 @@ class AutoresearchSandboxPool:
         if sandbox is None:
             return
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self._reset_sandbox, sandbox)
+        await loop.run_in_executor(None, self._reset_sandbox_dir, sandbox.path)
         await self._available.put(sandbox)
 
-    def _reset_sandbox(self, sandbox: Sandbox) -> None:
-        c = sandbox.container
-        c.exec_run(f"git -C {REPO_DIR} checkout main", demux=True)
-        c.exec_run(f"git -C {REPO_DIR} clean -fd", demux=True)
-        c.exec_run(f"git -C {REPO_DIR} reset --hard HEAD", demux=True)
+    def _reset_sandbox_dir(self, path: Path) -> None:
+        import subprocess
+        subprocess.run(["git", "checkout", "main"], cwd=path, capture_output=True)
+        subprocess.run(["git", "clean", "-fd"], cwd=path, capture_output=True)
+        subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=path, capture_output=True)
+        # Delete any stale branches
+        result = subprocess.run(
+            ["git", "branch", "--list", "autoresearch/*"],
+            cwd=path, capture_output=True, text=True,
+        )
+        for branch in result.stdout.strip().split("\n"):
+            branch = branch.strip()
+            if branch:
+                subprocess.run(["git", "branch", "-D", branch], cwd=path, capture_output=True)
 
     async def shutdown(self) -> None:
-        loop = asyncio.get_event_loop()
-        for sandbox in self._all.values():
-            await loop.run_in_executor(None, sandbox.container.remove, True)
-        self._all.clear()
         log.info("Sandbox pool shut down")
 
 
 # --- Sandbox operations (called by tools) ---
 
-# Module-level pool reference, set by AutoresearchEnv.__init__
 _pool: AutoresearchSandboxPool | None = None
 
 
-def _container(sandbox_id: str) -> Container:
+def _sandbox(sandbox_id: str) -> Sandbox:
     assert _pool is not None, "Sandbox pool not initialized"
-    return _pool._all[sandbox_id].container
+    return _pool._all[sandbox_id]
 
 
-async def _exec(sandbox_id: str, cmd: str, timeout: int = 60) -> tuple[int, str]:
-    """Execute a command in the sandbox container with a timeout."""
-    loop = asyncio.get_event_loop()
-    c = _container(sandbox_id)
+async def _exec(sandbox_id: str, cmd: str, timeout: int = 60, env_extra: dict | None = None) -> tuple[int, str]:
+    """Execute a shell command in the sandbox directory with GPU pinning."""
+    sandbox = _sandbox(sandbox_id)
+    env = os.environ.copy()
+    env["CUDA_VISIBLE_DEVICES"] = str(sandbox.gpu_id)
+    if env_extra:
+        env.update(env_extra)
+
     try:
-        exit_code, output = await asyncio.wait_for(
-            loop.run_in_executor(
-                None,
-                lambda: c.exec_run(cmd, demux=True, workdir=REPO_DIR),
+        proc = await asyncio.wait_for(
+            asyncio.create_subprocess_shell(
+                cmd,
+                cwd=str(sandbox.path),
+                env=env,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
             ),
+            timeout=5,  # timeout for process creation only
+        )
+        stdout, _ = await asyncio.wait_for(
+            proc.communicate(),
             timeout=timeout,
         )
     except asyncio.TimeoutError:
+        try:
+            proc.kill()
+        except Exception:
+            pass
         return 1, f"Command timed out after {timeout}s: {cmd[:100]}"
-    stdout = (output[0] or b"").decode("utf-8", errors="replace")
-    stderr = (output[1] or b"").decode("utf-8", errors="replace")
-    return exit_code, stdout + stderr
+
+    output = stdout.decode("utf-8", errors="replace") if stdout else ""
+    return proc.returncode or 0, output
 
 
 async def sandbox_read_file(sandbox_id: str, path: str) -> str:
-    exit_code, content = await _exec(sandbox_id, f"cat {path}")
-    if exit_code != 0:
-        return f"Error reading {path}: {content}"
-    return content
+    sandbox = _sandbox(sandbox_id)
+    file_path = sandbox.path / path
+    try:
+        return file_path.read_text()
+    except FileNotFoundError:
+        return f"Error: {path} not found"
+    except Exception as e:
+        return f"Error reading {path}: {e}"
 
 
 async def sandbox_write_file(sandbox_id: str, path: str, content: str) -> None:
-    """Write file content into container via put_archive (no shell escaping)."""
-    loop = asyncio.get_event_loop()
-    c = _container(sandbox_id)
-
-    data = content.encode("utf-8")
-    buf = io.BytesIO()
-    with tarfile.open(fileobj=buf, mode="w") as tar:
-        info = tarfile.TarInfo(name=path)
-        info.size = len(data)
-        tar.addfile(info, io.BytesIO(data))
-    buf.seek(0)
-
-    await loop.run_in_executor(
-        None,
-        lambda: c.put_archive(REPO_DIR, buf),
-    )
+    sandbox = _sandbox(sandbox_id)
+    file_path = sandbox.path / path
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    file_path.write_text(content)
 
 
 async def sandbox_run_train(sandbox_id: str, train_secs: int = 300) -> dict:
@@ -209,7 +209,7 @@ async def sandbox_git_checkout_branch(sandbox_id: str, branch: str) -> None:
 
 
 async def sandbox_git_commit(sandbox_id: str, message: str) -> str:
-    """Commit train.py with the given message. Message is written via file to avoid shell injection."""
+    """Commit train.py. Message written via file to avoid shell injection."""
     await sandbox_write_file(sandbox_id, ".commit_msg", message)
     await _exec(sandbox_id, "git add train.py")
     exit_code, output = await _exec(sandbox_id, "git commit -F .commit_msg")
@@ -222,51 +222,27 @@ async def sandbox_git_revert(sandbox_id: str) -> None:
     await _exec(sandbox_id, "git checkout -- train.py")
 
 
-ARTIFACTS_DIR = Path(os.environ.get("AUTORESEARCH_ARTIFACTS_DIR", "/tmp/autoresearch-artifacts"))
+ARTIFACTS_DIR = Path(os.environ.get("AUTORESEARCH_ARTIFACTS_DIR", "/workspace/artifacts"))
 
 
 async def sandbox_export_artifacts(sandbox_id: str, episode_id: str, state: dict) -> Path:
     """
     Export episode artifacts from sandbox before it's reset.
-    Returns path to the episode artifact directory.
 
-    Exports:
-    - results.tsv (experiment history)
-    - run.log (last training output)
-    - train.py (final state)
-    - git.log (full commit history for this episode branch)
-    - episode.json (structured episode summary for wandb)
+    Exports: results.tsv, run.log, train.py, git.log, episode.json
     """
+    sandbox = _sandbox(sandbox_id)
     episode_dir = ARTIFACTS_DIR / episode_id
     episode_dir.mkdir(parents=True, exist_ok=True)
 
-    loop = asyncio.get_event_loop()
-    c = _container(sandbox_id)
-
-    # Export files via get_archive
     for filename in ["results.tsv", "run.log", "train.py"]:
-        try:
-            bits, _ = await loop.run_in_executor(
-                None,
-                lambda f=filename: c.get_archive(f"{REPO_DIR}/{f}"),
-            )
-            tar_buf = io.BytesIO()
-            for chunk in bits:
-                tar_buf.write(chunk)
-            tar_buf.seek(0)
-            with tarfile.open(fileobj=tar_buf, mode="r") as tar:
-                member = tar.getmembers()[0]
-                f = tar.extractfile(member)
-                if f:
-                    (episode_dir / filename).write_bytes(f.read())
-        except Exception as e:
-            log.warning("Failed to export %s from %s: %s", filename, sandbox_id, e)
+        src = sandbox.path / filename
+        if src.exists():
+            shutil.copy2(src, episode_dir / filename)
 
-    # Export git log
     _, git_log = await _exec(sandbox_id, "git log --oneline --stat")
     (episode_dir / "git.log").write_text(git_log)
 
-    # Write structured episode summary
     history = state.get("experiment_history", [])
     summary = {
         "episode_id": episode_id,

@@ -55,8 +55,7 @@ def _build_dataset(system_prompt: str) -> Dataset:
 
 def load_environment(
     max_experiments: int = 15,
-    sandbox_pool_size: int = 16,
-    sandbox_image: str = "autoresearch-sandbox:latest",
+    sandbox_pool_size: int = 2,
     sandbox_gpu_ids: list[int] | None = None,
     **kwargs,
 ) -> AutoresearchEnv:
@@ -64,7 +63,7 @@ def load_environment(
     Prime-rl / verifiers entrypoint.
 
     Args:
-        sandbox_gpu_ids: Explicit list of GPU device IDs for sandbox containers.
+        sandbox_gpu_ids: Explicit list of GPU device IDs for sandbox workers.
                          E.g. [2, 3] to reserve GPUs 0-1 for inference/trainer.
                          Defaults to [0, 1, ..., sandbox_pool_size-1].
     """
@@ -76,7 +75,6 @@ def load_environment(
         system_prompt=system_prompt,
         max_experiments=max_experiments,
         sandbox_pool_size=sandbox_pool_size,
-        sandbox_image=sandbox_image,
         sandbox_gpu_ids=sandbox_gpu_ids,
         **kwargs,
     )
