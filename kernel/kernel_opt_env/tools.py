@@ -129,12 +129,6 @@ async def run_analysis(
     return _format_analysis_result(result)
 
 
-def _format_command_result(result: dict) -> str:
-    if not result["success"]:
-        return result["output"]
-    return result["output"]
-
-
 async def run_command(
     command: str,
     sandbox_id: str,
@@ -153,4 +147,6 @@ async def run_command(
         Command output (stdout), or an error message.
     """
     result = await sandbox_run_command(sandbox_id, command, timeout_secs=10)
-    return _format_command_result(result)
+    if not result["success"]:
+        return f"ERROR: {result['output']}"
+    return result["output"]

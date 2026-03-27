@@ -212,7 +212,7 @@ async def sandbox_run_tests(sandbox_id: str) -> dict:
     """Run submission_tests.py and return parsed results."""
     import re
 
-    cmd = "python tests/submission_tests.py 2>&1"
+    cmd = "python3 tests/submission_tests.py"
     exit_code, stdout, stderr = await _exec(sandbox_id, cmd, timeout=120)
     output = stdout + stderr
 
@@ -233,8 +233,10 @@ async def sandbox_run_tests(sandbox_id: str) -> dict:
     if cycles is None:
         return {"crashed": True, "correct": False, "output": "No cycle count found.\n" + output[-500:]}
 
-    # Check correctness: did the correctness tests pass?
-    correct = "Incorrect" not in output and "FAIL" not in output and "Error" not in output
+    # Check correctness: did the CorrectnessTests pass?
+    # Speed test failures show as "FAIL" but correctness failures show "Incorrect output values"
+    # or an exception/error in the correctness test class itself.
+    correct = "Incorrect output values" not in output and "ERROR: test_kernel_correctness" not in output
 
     # Count speed tests passed
     speed_tests = [
@@ -271,7 +273,7 @@ async def sandbox_run_analysis(
     try:
         script_path.write_text(script)
         exit_code, stdout, stderr = await _exec(
-            sandbox_id, f"python {script_name}", timeout=timeout_secs
+            sandbox_id, f"python3 {script_name}", timeout=timeout_secs
         )
 
         if exit_code != 0:
