@@ -91,10 +91,41 @@ async def monotonic_improvement_reward(
     return improvements / len(history)
 
 
+async def notes_reward(
+    completion: list[dict],
+    state: dict,
+    **kwargs,
+) -> float:
+    """
+    Small reward for maintaining notes.md.
+
+    Checks that notes.md exists and has been updated with substantive
+    content (not just empty or a single line). Rewards scale with
+    the number of optimization attempts documented.
+    """
+    from .sandbox import sandbox_read_file
+
+    sid = state.get("sandbox_id")
+    if not sid:
+        return 0.0
+
+    content = await sandbox_read_file(sid, "notes.md")
+    if content.startswith("Error:"):
+        return 0.0
+
+    lines = [l for l in content.strip().split("\n") if l.strip()]
+    if len(lines) < 3:
+        return 0.0
+
+    # Reward scales with content up to a cap
+    return min(len(lines) / 20, 1.0)
+
+
 rubric = vf.Rubric(
     funcs=[
         speedup_reward,
         monotonic_improvement_reward,
+        notes_reward,
     ],
-    weights=[1.0, 0.25],
+    weights=[1.0, 0.25, 0.1],
 )
