@@ -23,7 +23,10 @@ READABLE_PATHS = {
     "test_output.log",
     "tests/submission_tests.py",
     "best.py",
+    "notes.md",
 }
+
+WRITABLE_PATHS = {"perf_takehome.py", "notes.md"}
 
 
 async def read_file(
@@ -53,18 +56,18 @@ async def edit_file(
     sandbox_id: str,
 ) -> str:
     """
-    Overwrite perf_takehome.py with new content.
-    Only perf_takehome.py may be edited. problem.py and tests/ are read-only.
+    Overwrite a file with new content.
+    Only perf_takehome.py and notes.md may be edited.
 
     Args:
-        path: Must be 'perf_takehome.py'.
+        path: 'perf_takehome.py' or 'notes.md'.
         content: The complete new file content. Full file, not a diff.
 
     Returns:
         'OK' on success, or an error message if path is restricted.
     """
-    if path != "perf_takehome.py":
-        return f"Error: {path} is read-only. Only perf_takehome.py may be edited."
+    if path not in WRITABLE_PATHS:
+        return f"Error: {path} is read-only. Writable files: {sorted(WRITABLE_PATHS)}"
     await sandbox_write_file(sandbox_id, path, content)
     return "OK"
 

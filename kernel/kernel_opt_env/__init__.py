@@ -29,11 +29,18 @@ Key: all slots in one instruction bundle execute simultaneously in one cycle.
 Effects (writes) don't take effect until end of cycle.
 
 Your tools:
-  read_file(path)              — read perf_takehome.py, problem.py, or test output
-  edit_file(path, content)     — rewrite perf_takehome.py (full file, not a diff)
+  read_file(path)              — read perf_takehome.py, problem.py, notes.md, or test output
+  edit_file(path, content)     — write perf_takehome.py or notes.md (full file, not a diff)
   run_tests()                  — run submission tests, get correctness + cycle count
   run_analysis(script)         — run an inline Python script to analyze bottlenecks
   run_command(command)         — run a shell command (cp, ls, cat, diff, head, tail, wc, grep)
+
+Keep a notes.md file throughout the session. After each optimization attempt,
+update it with:
+  - Your hypothesis (what you expected to improve and why)
+  - Any analysis results (slot utilization, cycle breakdown, etc.)
+  - The outcome (cycle count, whether it helped, what you learned)
+This log helps you track what you've tried and plan next steps.
 
 The optimization loop:
   1. Read perf_takehome.py and problem.py to understand the current state.
@@ -42,10 +49,11 @@ The optimization loop:
   3. Identify the bottleneck and form an optimization hypothesis.
   4. Edit perf_takehome.py to implement it.
   5. Run tests to verify correctness and measure cycles.
-  6. If correct and faster: checkpoint with run_command('cp perf_takehome.py best.py').
+  6. Update notes.md with your hypothesis, analysis, and results.
+  7. If correct and faster: checkpoint with run_command('cp perf_takehome.py best.py').
      If incorrect or slower: restore with run_command('cp best.py perf_takehome.py')
      and try something else.
-  7. Repeat.
+  8. Repeat.
 
 Do NOT modify problem.py or anything in tests/. The submission tests use
 a frozen copy of the simulator.

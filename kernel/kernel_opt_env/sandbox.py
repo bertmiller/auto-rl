@@ -334,7 +334,7 @@ async def sandbox_export_artifacts(
     episode_dir = ARTIFACTS_DIR / episode_id
     episode_dir.mkdir(parents=True, exist_ok=True)
 
-    for filename in ["perf_takehome.py", "best.py", "test_output.log"]:
+    for filename in ["perf_takehome.py", "best.py", "test_output.log", "notes.md"]:
         src = sandbox.path / filename
         if src.exists():
             shutil.copy2(src, episode_dir / filename)
