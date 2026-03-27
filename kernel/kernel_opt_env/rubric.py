@@ -1,7 +1,7 @@
 """
 Reward functions for the kernel optimization RL environment.
 
-Primary reward: log2 speedup over baseline (147,734 cycles).
+Primary reward: log2 speedup over per-task baseline, scaled by difficulty.
 Process reward: fraction of attempts that set a new best.
 """
 
@@ -15,29 +15,51 @@ import verifiers as vf
 BASELINE_CYCLES = 147734
 
 
+def _difficulty_multiplier(baseline_cycles: int) -> float:
+    """
+    Scale reward by how hard the starting point is.
+
+    Harder variants (lower starting cycles) get a higher multiplier
+    so improvements on them produce comparable absolute reward to
+    large improvements on easy variants.
+
+    multiplier = log2(147734 / baseline_cycles) + 1
+
+    Examples:
+      baseline 147734 -> 1.0
+      variant  15973  -> ~4.2
+      variant   2432  -> ~6.9
+    """
+    if baseline_cycles >= BASELINE_CYCLES:
+        return 1.0
+    return math.log2(BASELINE_CYCLES / baseline_cycles) + 1
+
+
 async def speedup_reward(
     completion: list[dict],
     state: dict,
     **kwargs,
 ) -> float:
     """
-    Primary reward: log2 speedup over baseline.
+    Primary reward: log2 speedup over per-task baseline, scaled by difficulty.
 
-    Reference points:
-      - 2x speedup (73867 cycles)  -> reward 1.0
-      - 8x speedup (18467 cycles)  -> reward 3.0
-      - 100x speedup (1477 cycles) -> reward 6.6
+    reward = log2(baseline / best) * difficulty_multiplier - failure_penalty
+
+    The difficulty multiplier ensures that small improvements on hard
+    variants produce similar absolute reward to large improvements on
+    easy variants.
 
     Failure penalty: 0.05 per failure subtracted.
     """
     baseline = state.get("baseline_cycles", BASELINE_CYCLES)
     best = state.get("best_cycles", baseline)
     failure_penalty = state.get("num_failures", 0) * 0.05
+    multiplier = _difficulty_multiplier(baseline)
 
     if best >= baseline:
         return max(0.0, -failure_penalty)
 
-    raw = math.log2(baseline / best)
+    raw = math.log2(baseline / best) * multiplier
     return float(max(0.0, min(raw - failure_penalty, 10.0)))
 
 
