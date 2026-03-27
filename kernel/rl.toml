@@ -1,0 +1,65 @@
+max_steps = 5000
+seq_len = 32768
+
+[model]
+name = "Qwen/Qwen3-14B-Instruct"
+implementation = "auto"
+
+[model.lora]
+enabled = true
+rank = 128
+alpha = 256
+target_modules = [
+    "q_proj", "k_proj", "v_proj", "o_proj",
+    "gate_proj", "up_proj", "down_proj",
+]
+
+[optimization]
+learning_rate = 5e-7
+lr_scheduler = "cosine"
+warmup_steps = 150
+max_grad_norm = 0.5
+
+[orchestrator]
+batch_size = 64
+micro_batch_size = 4
+gradient_accumulation_steps = 16
+rollouts_per_example = 8       # 8 rollouts per seed; cheap oracle
+max_tokens = 8192              # full perf_takehome.py rewrite + reasoning
+num_workers = 8                # 8 parallel rollouts (CPU-only oracle)
+max_pending_rollouts = 32
+rollout_timeout_secs = 600     # 10min: 20 attempts * ~3s each + overhead
+
+[orchestrator.env]
+id = "kernel-opt"
+
+[orchestrator.env.env_args]
+max_attempts = 20
+sandbox_pool_size = 8
+
+[orchestrator.algorithm]
+name = "grpo"
+epsilon = 0.2
+epsilon_high = 0.25
+use_advantage_normalization = true
+use_difficulty_buffer = false  # single fixed task
+
+[orchestrator.sampling]
+temperature = 0.8
+top_p = 0.95
+
+[inference]
+tensor_parallel_size = 2
+max_model_len = 32768
+gpu_memory_utilization = 0.85
+enable_auto_tool_choice = true
+tool_call_parser = "hermes"
+
+[checkpoint]
+save_on_completion = true
+
+[logging]
+wandb_project = "kernel-opt-rl"
+log_every_n_steps = 5
+eval_every_n_steps = 100
+eval_num_examples = 8
