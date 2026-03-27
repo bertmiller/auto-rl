@@ -121,11 +121,30 @@ async def notes_reward(
     return min(len(lines) / 20, 1.0)
 
 
+async def analysis_reward(
+    completion: list[dict],
+    state: dict,
+    **kwargs,
+) -> float:
+    """
+    Small reward for running analysis scripts to understand bottlenecks
+    before making changes. Encourages data-driven optimization over
+    blind edits.
+
+    Rewards up to 5 analysis calls (1 per 4 attempts is reasonable).
+    """
+    num_analyses = state.get("num_analyses", 0)
+    if num_analyses == 0:
+        return 0.0
+    return min(num_analyses / 5, 1.0)
+
+
 rubric = vf.Rubric(
     funcs=[
         speedup_reward,
         monotonic_improvement_reward,
         notes_reward,
+        analysis_reward,
     ],
-    weights=[1.0, 0.25, 0.1],
+    weights=[1.0, 0.25, 0.1, 0.1],
 )

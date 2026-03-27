@@ -146,6 +146,8 @@ class KernelOptEnv(vf.StatefulToolEnv):
             )
             if name == "run_tests":
                 run_tests_call_ids.add(tc_id)
+            elif name == "run_analysis":
+                state["num_analyses"] = state.get("num_analyses", 0) + 1
 
         tool_messages = await super().env_response(messages, state, **kwargs)
 
