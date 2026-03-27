@@ -18,6 +18,7 @@ from .rubric import rubric, BASELINE_CYCLES
 from .sandbox import (
     KernelOptSandboxPool,
     sandbox_export_artifacts,
+    sandbox_install_variant,
 )
 from .tools import edit_file, read_file, run_analysis, run_command, run_tests
 from . import sandbox as sandbox_mod
@@ -75,24 +76,33 @@ class KernelOptEnv(vf.StatefulToolEnv):
 
     async def setup_state(self, state: State, **kwargs) -> State:
         """
-        Allocate a fresh sandbox with a clean copy of the challenge files.
-        No baseline run needed -- the baseline cycle count is a known constant.
+        Allocate a fresh sandbox, install the task's starting-point variant,
+        and initialize episode state with the variant's baseline cycle count.
         """
         sandbox_id = await self.sandbox_pool.acquire()
+
+        # Read task-specific starting point from dataset info
+        task_info = state.get("info", {})
+        baseline_cycles = task_info.get("baseline_cycles", BASELINE_CYCLES)
+        variant_file = task_info.get("variant_file", "baseline_147734.py")
+
+        # Install the variant's perf_takehome.py into the sandbox
+        await sandbox_install_variant(sandbox_id, variant_file)
 
         episode_id = f"ep-{uuid.uuid4().hex[:8]}"
         state.update({
             "sandbox_id": sandbox_id,
             "episode_id": episode_id,
-            "baseline_cycles": BASELINE_CYCLES,
-            "best_cycles": BASELINE_CYCLES,
-            "current_cycles": BASELINE_CYCLES,
+            "baseline_cycles": baseline_cycles,
+            "best_cycles": baseline_cycles,
+            "current_cycles": baseline_cycles,
+            "variant_file": variant_file,
             "optimization_history": [{
                 "step": 0,
-                "cycles": BASELINE_CYCLES,
+                "cycles": baseline_cycles,
                 "speedup": 1.0,
                 "correct": True,
-                "description": "baseline (naive scalar, no ILP, no SIMD)",
+                "description": f"starting point ({variant_file})",
             }],
             "num_failures": 0,
             "optimization_step": 0,
@@ -168,10 +178,11 @@ class KernelOptEnv(vf.StatefulToolEnv):
                     if cycles < state["best_cycles"]:
                         state["best_cycles"] = cycles
 
+                    baseline = state["baseline_cycles"]
                     state["optimization_history"].append({
                         "step": step,
                         "cycles": cycles,
-                        "speedup": round(BASELINE_CYCLES / cycles, 2),
+                        "speedup": round(baseline / cycles, 2),
                         "correct": True,
                         "description": "",
                     })
@@ -202,7 +213,6 @@ class KernelOptEnv(vf.StatefulToolEnv):
             return True
         return state.get("episode_done", False)
 
-    @vf.cleanup
     async def release_sandbox(self, state: State) -> None:
         sid = state.get("sandbox_id")
         if not sid:
@@ -217,6 +227,12 @@ class KernelOptEnv(vf.StatefulToolEnv):
         self._log_episode_metrics(state)
 
         await self.sandbox_pool.release(sid)
+
+    async def rollout(self, *args, **kwargs):
+        """Override rollout to ensure sandbox cleanup after each episode."""
+        completion, state = await super().rollout(*args, **kwargs)
+        await self.release_sandbox(state)
+        return completion, state
 
     def _log_episode_metrics(self, state: State) -> None:
         """Log per-episode metrics to wandb."""
@@ -255,6 +271,5 @@ class KernelOptEnv(vf.StatefulToolEnv):
         }
         wandb.log(episode_data)
 
-    @vf.teardown
     async def shutdown_pool(self) -> None:
         await self.sandbox_pool.shutdown()

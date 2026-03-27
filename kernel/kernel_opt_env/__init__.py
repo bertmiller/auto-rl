@@ -14,9 +14,9 @@ SYSTEM_PROMPT_TEMPLATE = """\
 You are a performance engineering agent. Your task is to optimize a kernel
 running on a custom VLIW SIMD machine simulator, minimizing clock cycles.
 
-The kernel performs a batched tree traversal with hashing. The baseline
-implementation is a naive scalar version running in 147,734 cycles. Your
-goal is to reduce this as much as possible.
+The kernel performs a batched tree traversal with hashing. Your starting
+implementation runs in {baseline_cycles:,} cycles. Your goal is to reduce
+this as much as possible.
 
 The machine has these engines executing in parallel per cycle:
   - alu:   12 scalar ALU slots
@@ -63,18 +63,38 @@ bottleneck is before changing code.
 
 DATASET_REPEAT_N = 10_000
 
+# Starting points: (variant_filename, baseline_cycles)
+# Each is a perf_takehome.py at a different optimization level.
+# The original baseline is the naive scalar implementation.
+# Variants come from prior optimization sessions at various stages.
+STARTING_POINTS = [
+    ("baseline_147734.py", 147734),
+    ("variant_15973.py", 15973),
+    ("variant_5780.py", 5780),
+    ("variant_5356.py", 5356),
+    ("variant_4237.py", 4237),
+    ("variant_3157.py", 3157),
+    ("variant_2786.py", 2786),
+    ("variant_2432.py", 2432),
+]
+
 
 def _build_dataset(system_prompt: str) -> Dataset:
-    task = {
-        "task_id": "kernel-opt-baseline",
-        "prompt": system_prompt,
-        "answer": 1487,  # Opus 4.5 after 11.5 hours
-        "info": {
-            "baseline_cycles": 147734,
-            "target_thresholds": [18532, 2164, 1790, 1579, 1548, 1487, 1363],
-        },
-    }
-    return Dataset.from_list([task] * DATASET_REPEAT_N)
+    tasks = []
+    for variant_file, baseline_cycles in STARTING_POINTS:
+        task = {
+            "task_id": f"kernel-opt-{baseline_cycles}",
+            "prompt": system_prompt,
+            "answer": 1487,  # Opus 4.5 after 11.5 hours
+            "info": {
+                "baseline_cycles": baseline_cycles,
+                "variant_file": variant_file,
+            },
+        }
+        tasks.append(task)
+    # Repeat the task list to fill the dataset
+    full = tasks * (DATASET_REPEAT_N // len(tasks) + 1)
+    return Dataset.from_list(full[:DATASET_REPEAT_N])
 
 
 def load_environment(
@@ -89,12 +109,17 @@ def load_environment(
         max_attempts: Maximum optimization attempts per episode.
         sandbox_pool_size: Number of sandbox directories to pre-create.
     """
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(max_attempts=max_attempts)
-    dataset = _build_dataset(system_prompt)
+    # Use a placeholder prompt for dataset construction; the env
+    # formats the real prompt per-episode in setup_state using
+    # the task's baseline_cycles.
+    placeholder_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+        max_attempts=max_attempts, baseline_cycles=147734
+    )
+    dataset = _build_dataset(placeholder_prompt)
 
     return KernelOptEnv(
         dataset=dataset,
-        system_prompt=system_prompt,
+        system_prompt=SYSTEM_PROMPT_TEMPLATE,
         max_attempts=max_attempts,
         sandbox_pool_size=sandbox_pool_size,
         **kwargs,

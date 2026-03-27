@@ -34,6 +34,12 @@ SANDBOXES_DIR = Path(
 ARTIFACTS_DIR = Path(
     os.environ.get("KERNEL_OPT_ARTIFACTS_DIR", str(_THIS_DIR.parent / "artifacts"))
 )
+STARTING_POINTS_DIR = Path(
+    os.environ.get(
+        "KERNEL_OPT_STARTING_POINTS_DIR",
+        str(_THIS_DIR.parent / "starting_points"),
+    )
+)
 
 # Files that constitute the clean challenge state
 CHALLENGE_FILES = [
@@ -188,6 +194,14 @@ async def _exec(
 
 
 # --- Sandbox operations (called by tools) ---
+
+
+async def sandbox_install_variant(sandbox_id: str, variant_file: str) -> None:
+    """Copy a starting-point perf_takehome.py variant into the sandbox."""
+    sandbox = _sandbox(sandbox_id)
+    src = STARTING_POINTS_DIR / variant_file
+    dst = sandbox.path / "perf_takehome.py"
+    shutil.copy2(src, dst)
 
 
 async def sandbox_read_file(sandbox_id: str, path: str) -> str:
