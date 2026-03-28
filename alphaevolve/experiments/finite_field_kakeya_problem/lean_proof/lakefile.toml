@@ -1,0 +1,11 @@
+name = "kakeya"
+version = "0.1.0"
+defaultTargets = ["kakeya"]
+
+[[lean_lib]]
+name = "kakeya"
+
+[[require]]
+name = "formal_conjectures"
+git = "https://github.com/google-deepmind/formal-conjectures"
+rev = "2c7032d013e26b45f153b65f4253980d483a2f77"

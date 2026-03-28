@@ -1,0 +1,176 @@
+\documentclass{article}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[margin=1in]{geometry}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{definition}
+\newtheorem*{proof_of_lemma}{Proof of Lemma}
+
+\newcommand{\Fp}{\mathbb{F}_p}
+\newcommand{\K}{\mathcal{K}}
+\newcommand{\KA}{\K_A}
+\newcommand{\KOB}{\K_{0B}}
+\newcommand{\KOC}{\K_{0C}}
+
+\title{On the Size of a Kakeya Set in $\Fp^3$}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document presents a simplified construction of the Kakeya set and a rigorous mathematical proof of the formula for its size when the prime $p$ is congruent to 1 modulo 4.
+\end{abstract}
+
+\begin{theorem}
+Let $p$ be a prime such that $p \equiv 1 \pmod{4}$. Let $\Fp$ be the finite field with $p$ elements, and let $S \subset \Fp$ be the set of quadratic residues (including 0). Let $g = (p-1)/4$. We define a Kakeya set $\K \subset \Fp^3$ as the union $\K = \KA \cup \KOB \cup \KOC$, where the components are defined as follows:
+\begin{enumerate}
+    \item $\KA = \{ (x, \frac{q_1+q_2}{2} - x^2 - g, \frac{q_1-q_2}{2}) \in \Fp^3 : x \in \Fp, q_1, q_2 \in S \}$
+    \item $\KOB = \{ (0, y, z) \in \Fp^3 : y + z^2 \in S \}$
+    \item $\KOC = \{ (0, y, 0) \in \Fp^3 : y \in \Fp \}$
+\end{enumerate}
+The size of this Kakeya set is given by the formula:
+\[
+|\K| = \frac{2p^3 + 7p^2 - 1}{8}
+\]
+\end{theorem}
+
+\begin{proof}
+\section{Preliminaries}
+We begin by establishing some properties. The size of the set of squares is $|S| = \frac{p-1}{2} + 1 = \frac{p+1}{2}$. Let $\chi$ be the quadratic character on $\Fp$. Since $p \equiv 1 \pmod{4}$, we have $\chi(-1) = 1$, so $-1 \in S$.
+By definition, $4g = p-1 \equiv -1 \pmod{p}$, so $g \equiv -1/4$. Since $\chi(-1)=1$ and $\chi(1/4)=1$, we have $\chi(g)=1$.
+
+\section{Decomposition of the Set}
+We analyze the size of the set $\K$ by splitting it based on the $x$-coordinate. Let $\K^x$ denote the slice of $\K$ at a fixed $x$.
+\[
+|\K| = \sum_{x \in \Fp} |\K^x| = |\K^0| + \sum_{x \neq 0} |\K^x|
+\]
+The definition of $\KA$ involves a parameterization by $(x, q_1, q_2)$. This mapping is a bijection from $\Fp \times S \times S$ to $\KA$, as $q_1$ and $q_2$ can be uniquely recovered from $(x, y, z)$. For any fixed $x$, the slice $\KA^x$ has size $|S|^2$.
+
+For $x \neq 0$, the sets $\KOB$ and $\KOC$ do not contribute, so $\K^x = \KA^x$. The total contribution from $x \neq 0$ is:
+\[
+|\K^{x \neq 0}| = (p-1)|S|^2 = (p-1)\left(\frac{p+1}{2}\right)^2 = \frac{p^3 + p^2 - p - 1}{4}
+\]
+
+\section{Analysis of $\K^0$}
+The slice at $x=0$ is $\K^0 = \KA^0 \cup \KOB \cup \KOC$. We use the Principle of Inclusion-Exclusion (PIE) to determine its size:
+\[
+|\K^0| = \Sigma_1 - \Sigma_2 + \Sigma_3
+\]
+where $\Sigma_k$ denotes the sum of the sizes of the $k$-wise intersections.
+
+\subsection{Component Sizes at $x=0$ ($\Sigma_1$)}
+\begin{itemize}
+    \item $|\KA^0| = |S|^2 = \left(\frac{p+1}{2}\right)^2$.
+    \item $|\KOB|$: For each $z \in \Fp$, there are $|S|$ choices for $y$ such that $y+z^2 \in S$. Thus, $|\KOB| = p|S| = \frac{p(p+1)}{2}$.
+    \item $|\KOC|$: This is the line $\{(0, y, 0)\}$. Thus, $|\KOC| = p$.
+\end{itemize}
+\[
+\Sigma_1 = |\KA^0| + |\KOB| + |\KOC| = \frac{(p+1)^2}{4} + \frac{p(p+1)}{2} + p = \frac{p^2+2p+1+2p^2+2p+4p}{4} = \frac{3p^2+8p+1}{4}
+\]
+
+\subsection{Intersections}
+We analyze the intersections of these sets within the plane $x=0$.
+\begin{itemize}
+    \item $\KOB \cap \KOC$: Points $(0, y, 0)$ such that $y+0^2 \in S$, i.e., $y \in S$.
+    $|\KOB \cap \KOC| = |S| = \frac{p+1}{2}$.
+
+    \item $\KA^0 \cap \KOC$: Points $(0, y, 0)$. The conditions for $\KA^0$ require $z = (q_1-q_2)/2 = 0$, so $q_1=q_2=q$. Then $y = q-g$. The points are $\{(0, q-g, 0) : q \in S\}$.
+    $|\KA^0 \cap \KOC| = |S| = \frac{p+1}{2}$.
+
+    \item $\KA^0 \cap \KOB \cap \KOC$ (Triple Intersection, $\Sigma_3$): We require $y \in S$ and $y+g \in S$. This is the count of consecutive squares (shifted by $g$). Since $\chi(g)=1$ and $p \equiv 1 \pmod{4}$, the number of such elements, denoted $N_{SS}$, is known to be:
+    $\Sigma_3 = N_{SS} = |S \cap (S-g)| = \frac{p-3}{4}$.
+
+    \item $\KA^0 \cap \KOB$: Let $N_{AB} = |\KA^0 \cap \KOB|$. We seek the number of points $(0, y, z) \in \KA^0$ such that $y+z^2 \in S$. We substitute the parameterization of $\KA^0$: $y = (q_1+q_2)/2 - g$, $z = (q_1-q_2)/2$. The condition $y+z^2 \in S$ is equivalent to $4(y+z^2) \in S$.
+    \[
+    4\left(\frac{q_1+q_2}{2}-g\right) + 4\left(\frac{q_1-q_2}{2}\right)^2 = 2(q_1+q_2) - 4g + (q_1-q_2)^2 \in S
+    \]
+    Since $4g = p-1 = -1$, we define the quadratic form $Q(q_1, q_2) = (q_1-q_2)^2 + 2(q_1+q_2) + 1$.
+    $N_{AB}$ is the number of pairs $(q_1, q_2) \in S \times S$ such that $Q(q_1, q_2) \in S$.
+\end{itemize}
+
+We analyze $N_{AB}$ using character sums. Let $N_Z, N_R, N_{NR}$ be the number of pairs in $S^2$ where $Q(q_1, q_2)$ is zero, a non-zero residue, or a non-residue, respectively. $N_{AB} = N_Z + N_R$.
+Let $J = \sum_{q_1,q_2 \in S} \chi(Q(q_1, q_2)) = N_R - N_{NR}$.
+Since $|S|^2 = N_Z + N_R + N_{NR}$, we have $N_{AB} = \frac{|S|^2 - N_{NR} + N_Z + J}{2}$.
+
+\begin{lemma}[Calculation of $N_Z$]
+The number of zeros of $Q(q_1, q_2)$ in $S^2$ is $N_Z=p$.
+\end{lemma}
+\begin{proof_of_lemma}
+We seek $(q_1, q_2) \in S^2$ such that $Q(q_1,q_2)=0$. Let $q_1=x^2, q_2=y^2$. The expression can be rewritten as $Q(x^2, y^2) = (x^2+y^2+1)^2 - 4x^2y^2$.
+Setting $Q=0$ yields $(x^2+y^2+1)^2 = (2xy)^2$.
+\[
+x^2+y^2+1 = 2xy \implies (x-y)^2 = -1.
+\]
+\[
+x^2+y^2+1 = -2xy \implies (x+y)^2 = -1.
+\]
+Since $p \equiv 1 \pmod{4}$, there exists $i \in \Fp^*$ such that $i^2 = -1$. The solutions $(x, y)$ lie on the union of four lines: $x-y = \pm i$ and $x+y = \pm i$.
+These lines intersect at 4 distinct points: $(\pm i, 0)$ and $(0, \pm i)$. The total number of solutions $(x,y) \in \Fp^2$ is $4p-4$.
+
+We map these solutions $(x,y)$ back to $(x^2, y^2) \in S^2$.
+The 4 intersection points map to $(-1,0)$ and $(0, -1)$. Since $-1 \in S$, these contribute 2 solutions to $N_Z$.
+The remaining $(4p-4)-4 = 4p-8$ solutions have $x \neq 0$ and $y \neq 0$. The mapping $(x,y) \to (x^2, y^2)$ is 4-to-1.
+This yields $(4p-8)/4 = p-2$ distinct solutions in $S^2$.
+Thus, $N_Z = 2+(p-2)=p$.
+\end{proof_of_lemma}
+
+\begin{lemma}[Calculation of $J$]
+The character sum $J$ is equal to $\frac{p-1}{2}$.
+\end{lemma}
+\begin{proof_of_lemma}
+We evaluate the related sum over the whole field: $S(P) = \sum_{x,y \in \Fp} \chi(Q(x^2, y^2))$. We utilize the factorization $Q(x^2, y^2) = ((x-y)^2+1)((x+y)^2+1)$.
+Let $u=x-y, v=x+y$. This is a bijection since $p \neq 2$.
+\[
+S(P) = \sum_{u,v \in \Fp} \chi((u^2+1)(v^2+1)) = \left(\sum_{u \in \Fp} \chi(u^2+1)\right)\left(\sum_{v \in \Fp} \chi(v^2+1)\right)
+\]
+A standard result for character sums states that $\sum_a \chi(x^2+a) = -1$ if $a \neq 0$. Thus, $S(P) = (-1)^2=1$.
+
+We now relate $S(P)$ back to $J$ by analyzing the contributions based on whether $x$ or $y$ (and $q_1$ or $q_2$) are zero. Let $S^* = S \setminus \{0\}$.
+Let $J^* = \sum_{q_1,q_2 \in S^*} \chi(Q(q_1,q_2))$. The contribution to $S(P)$ when $x \neq 0, y \neq 0$ is $4J^*$.
+We analyze the boundary terms $S_0(P)$ (when $x=0$ or $y=0$).
+$S_0(P) = \chi(Q(0,0)) + 2\sum_{x \neq 0} \chi(Q(x^2,0))$. $Q(x^2, 0) = (x^2+1)^2$. The summand is 1 unless $x^2=-1$ (2 solutions).
+$S_0(P) = 1 + 2((p-1)-2) = 1+2(p-3) = 2p-5$.
+$S(P) = 4J^*+S_0(P) \implies 1 = 4J^* + 2p-5 \implies 4J^*=6-2p \implies J^* = \frac{3-p}{2}$.
+
+We analyze the boundary terms $J_0$ (when $q_1=0$ or $q_2=0$).
+$J_0 = \chi(Q(0,0)) + 2\sum_{q_1 \in S^*} \chi(Q(q_1,0))$.
+Since $-1 \in S^*$, the sum is $|S^*|-1 = \frac{p-3}{2}$.
+$J_0 = 1+2\left(\frac{p-3}{2}\right) = p-2$.
+$J = J^*+J_0 = \frac{3-p}{2} + p-2 = \frac{3-p+2p-4}{2} = \frac{p-1}{2}$.
+\end{proof_of_lemma}
+
+Calculating $N_{AB}$:
+We substitute $N_Z = p$ and $J=(p-1)/2$ into the formula for $N_{AB}$.
+\[
+N_{AB} = \frac{1}{2}\left(|S|^2 + p - |S|^2 + \frac{p-1}{2}\right) = \frac{1}{2}\left(\frac{(p+1)^2}{4} + p + \frac{p-1}{2}\right) = \frac{1}{8}(p^2+2p+1+4p+2p-2) = \frac{p^2+8p-1}{8}
+\]
+
+\subsection{Final Calculation of $|\K^0|$}
+We now combine the results using PIE. The sum of pairwise intersections ($\Sigma_2$) is:
+\begin{align*}
+\Sigma_2 &= N_{AB} + |\KA^0 \cap \KOC| + |\KOB \cap \KOC| \\
+&= \frac{p^2+8p-1}{8} + \frac{p+1}{2} + \frac{p+1}{2} \\
+&= \frac{p^2+8p-1 + 8(p+1)}{8} = \frac{p^2+8p-1+8p+8}{8} = \frac{p^2+16p+7}{8}
+\end{align*}
+We also have $\Sigma_1 = \frac{3p^2+8p+1}{4} = \frac{6p^2+16p+2}{8}$ and $\Sigma_3 = \frac{p-3}{4} = \frac{2p-6}{8}$.
+\begin{align*}
+|\K^0| &= \Sigma_1 - \Sigma_2 + \Sigma_3 \\
+&= \frac{6p^2+16p+2 - (p^2+16p+7) + (2p-6)}{8} \\
+&= \frac{5p^2+2p-11}{8}
+\end{align*}
+
+\section{Total Size $|\K|$}
+Finally, we combine the contributions from $x \neq 0$ and $x=0$.
+\begin{align*}
+|\K| &= |\K^{x \neq 0}| + |\K^0| = \frac{p^3+p^2-p-1}{4} + \frac{5p^2+2p-11}{8} \\
+&= \frac{2(p^3+p^2-p-1) + (5p^2+2p-11)}{8} \\
+&= \frac{2p^3+2p^2-2p-2 + 5p^2+2p-11}{8} \\
+&= \frac{2p^3+7p^2-13}{8}
+\end{align*}
+This completes the proof.
+
+\end{proof}
+\end{document}

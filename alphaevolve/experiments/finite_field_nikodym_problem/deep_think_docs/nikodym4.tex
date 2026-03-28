@@ -1,0 +1,146 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+% --- Environment Definitions ---
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+
+% --- Math Operators ---
+\DeclareMathOperator{\deg_}{deg}
+
+\begin{document}
+
+This document provides a detailed and rigorous exposition of the proof adapting the anisotropic polynomial method, introduced by Bukh and Chao, to derive lower bounds for the size of Nikodym sets in finite fields.
+
+\section{Preliminaries}
+
+Let $\mathbb{F}_q$ be the finite field with $q$ elements. We work in the $n$-dimensional vector space $\mathbb{F}_q^n$. We assume $n \ge 3$ and $q \ge 2$.
+
+\begin{definition}[Nikodym Set]
+A set $N \subseteq \mathbb{F}_q^n$ is a Nikodym set if for every point $p \in \mathbb{F}_q^n$, there exists a line $L_p$ passing through $p$ such that $L_p \setminus \{p\} \subseteq N$.
+\end{definition}
+
+\begin{definition}[Multiplicity]
+A polynomial $P \in \mathbb{F}_q[x_1, \dots, x_n]$ vanishes at a point $p \in \mathbb{F}_q^n$ with multiplicity at least $m$ if all partial derivatives of $P$ of order strictly less than $m$ vanish at $p$.
+\end{definition}
+
+We will utilize multiplicity $m=2$. $P$ vanishes at $p$ with multiplicity at least 2 if $P(p) = 0$ and all first-order partial derivatives $\partial_i P(p) = 0$ for $i=1, \dots, n$. This imposes $n+1$ linear constraints on the coefficients of $P$.
+
+\begin{theorem}[Polynomials Vanishing on $\mathbb{F}_q^n$]
+If a polynomial $P \in \mathbb{F}_q[x_1, \dots, x_n]$ vanishes on all of $\mathbb{F}_q^n$ and the individual degree $\deg_{x_i}(P) < q$ for all $i=1, \dots, n$, then $P$ is the zero polynomial $(P \equiv 0)$.
+\end{theorem}
+
+\section{The Anisotropic Polynomial Space}
+
+We define a specific vector space of polynomials. We set the maximum total degree $D$ such that it is just below the number of zeros guaranteed on a Nikodym line segment with multiplicity 2, i.e., $D < 2(q-1)$. We set $D = 2q - 3$.
+
+\begin{definition}[Anisotropic Space V]
+We define the vector space $V \subseteq \mathbb{F}_q[x_1, \dots, x_n]$ as:
+$$ V = \{P : \text{deg}(P) \le 2q - 3 \text{ and } \deg_{x_i}(P) < q \text{ for } i=1, \dots, n-1 \}. $$
+This space is anisotropic as the constraint on $x_n$ is relaxed compared to the others.
+\end{definition}
+
+\section{The Key Lemma}
+
+The core of the argument lies in the following lemma.
+
+\begin{lemma}
+Let $N$ be a Nikodym set in $\mathbb{F}_q^n$. If a polynomial $P \in V$ vanishes with multiplicity at least 2 at every point of $N$, then $P \equiv 0$.
+\end{lemma}
+
+\begin{proof}
+\textbf{Step 1: P vanishes on the entire space $\mathbb{F}_q^n$.}
+
+Let $p \in \mathbb{F}_q^n$ be arbitrary. By Definition 1.1, there exists a line $L_p$ through $p$ such that $S_p = L_p \setminus \{p\} \subseteq N$. Note that $|S_p| = q-1$.
+
+Consider the restriction of $P$ to $L_p$, denoted $P|_{L_p}$. This is a univariate polynomial. Its degree is bounded by the total degree of $P$: $\deg(P|_{L_p}) \le \deg P \le 2q-3$.
+
+By hypothesis, $P$ vanishes with multiplicity at least 2 at every point in $N$, and thus at every point in $S_p$. The total number of zeros of $P|_{L_p}$, counted with multiplicity, is at least $2 \cdot |S_p| = 2(q-1) = 2q-2$.
+
+Since the number of zeros $(2q-2)$ exceeds the degree $(\le 2q-3)$, the polynomial $P|_{L_p}$ must be identically zero. In particular, $P(p) = 0$. As $p$ was arbitrary, $P$ vanishes everywhere on $\mathbb{F}_q^n$.
+
+\textbf{Step 2: Polynomial Reduction.}
+
+We utilize the anisotropic structure of $V$. We perform polynomial division of $P$ by $(x_n^q - x_n)$ with respect to the variable $x_n$.
+$$ P(x) = (x_n^q - x_n)Q(x) + R(x), $$
+where $Q(x)$ is the quotient and $R(x)$ is the remainder, satisfying $\deg_{x_n} R < q$.
+
+We evaluate this equation at any point $a \in \mathbb{F}_q^n$. From Step 1, $P(a) = 0$. By Fermat's Little Theorem, $(a_n^q - a_n) = 0$. Thus, $0 = 0 \cdot Q(a) + R(a)$.
+Thus, $R(a)=0$. The remainder $R$ vanishes on all of $\mathbb{F}_q^n$.
+
+Now we examine the individual degrees of $R$. Since $P \in V$, $\deg_{x_i} P < q$ for $i=1, \dots, n-1$. Polynomial division with respect to $x_n$ does not increase the degrees with respect to the other variables, so $\deg_{x_i} R < q$ for $i=1, \dots, n-1$.
+
+We now have a polynomial $R$ such that $\deg_{x_i} R < q$ for all $i=1, \dots, n$, and $R$ vanishes on $\mathbb{F}_q^n$. By Theorem 1.3, $R \equiv 0$.
+We conclude that $P(x) = (x_n^q - x_n)Q(x)$.
+
+\textbf{Step 3: Analyzing the Quotient Q.}
+
+We determine the degree of $Q$.
+$\deg P = \deg(x_n^q - x_n) + \deg Q = q + \deg Q$.
+Since $\deg P \le 2q - 3$, we have $q + \deg Q \le 2q - 3$, which implies $\deg Q \le q - 3$.
+
+\textbf{Step 4: Using the Derivative Constraints.}
+
+We use the hypothesis that the derivatives of $P$ vanish on $N$. We examine the partial derivative with respect to $x_n$.
+First, note that the formal derivative $\partial_n(x_n^q - x_n) = qx_n^{q-1} - 1$. In $\mathbb{F}_q$, this is equal to $-1$.
+
+Differentiating $P(x)$ using the product rule:
+$$ \partial_n P(x) = \partial_n(x_n^q - x_n) \cdot Q(x) + (x_n^q - x_n) \cdot \partial_n Q(x) $$
+$$ \partial_n P(x) = (-1) \cdot Q(x) + (x_n^q - x_n) \cdot \partial_n Q(x) $$
+
+Let $p \in N$. By hypothesis, $P$ vanishes to order 2 at $p$, so $\partial_n P(p) = 0$. Also, $(x_n^q - x_n)$ evaluated at $p$ is 0. Evaluating the equation at $p$:
+$$ 0 = (-1) \cdot Q(p) + 0. $$
+$$ 0 = -Q(p). $$
+Thus, $Q(p) = 0$. The polynomial $Q$ vanishes on the entire set $N$.
+
+\textbf{Step 5: Conclusion.}
+
+We have established that $Q$ vanishes on $N$ and $\deg Q \le q - 3$.
+Let $p$ be an arbitrary point in $\mathbb{F}_q^n$, and let $L_p$ be its Nikodym line. The restriction $Q|_{L_p}$ has degree $\le q-3$. It vanishes on the $q-1$ points in $L_p \setminus \{p\}$.
+Since the number of zeros $(q-1)$ exceeds the degree $(\le q-3)$, $Q|_{L_p} \equiv 0$. Thus $Q(p) = 0$.
+
+$Q$ vanishes on all of $\mathbb{F}_q^n$. Since $\deg Q < q$, all individual degrees are less than $q$. By Theorem 1.3, $Q$ is the zero polynomial $(Q \equiv 0)$.
+Consequently, $P(x) = (x_n^q - x_n)Q(x) \equiv 0$.
+\end{proof}
+
+\section{Dimension Calculation and Lower Bound}
+
+We now calculate the dimension of $V$. We use the Principle of Inclusion-Exclusion to count the number of monomials satisfying the degree constraints: $\sum_{i=1}^n e_i \le D$ and $e_i < q$ for $i=1, \dots, n-1$.
+$$ \dim V = \sum_{S \subseteq \{1, \dots, n-1\}} (-1)^{|S|} \binom{D-|S|q+n}{n}. $$
+Substituting $D = 2q-3$:
+$$ \dim V = \binom{2q-3+n}{n} - \binom{n-1}{1}\binom{2q-3-q+n}{n} + \binom{n-1}{2}\binom{2q-3-2q+n}{n} - \dots $$
+$$ \dim V = \binom{2q+n-3}{n} - (n-1)\binom{q+n-3}{n} + \binom{n-1}{2}\binom{n-3}{n} - \dots $$
+Since we assume $n \ge 3$, we have $n-3 \ge 0$. As the upper index $n-3$ is strictly less than the lower index $n$, the binomial coefficient $\binom{n-3}{n} = 0$. All subsequent terms involve even smaller upper indices and thus are also 0.
+
+Thus, for $n \ge 3$:
+$$ \dim V = \binom{2q+n-3}{n} - (n-1)\binom{q+n-3}{n}. $$
+
+\begin{theorem}
+Let $N$ be a Nikodym set in $\mathbb{F}_q^n$ ($n \ge 3, q \ge 2$). Then,
+$$ |N| \ge \frac{1}{n+1}\left(\binom{2q+n-3}{n} - (n-1)\binom{q+n-3}{n}\right). $$
+\end{theorem}
+
+\begin{proof}
+We consider the linear constraints imposed on the space $V$ by requiring that a polynomial $P \in V$ vanishes to order 2 at every point $p \in N$. This yields a total of $(n+1)|N|$ linear constraints.
+
+If the number of constraints is less than the dimension of the space, $(n+1)|N| < \dim V$, then there must exist a non-zero polynomial $P \in V$ satisfying these constraints. However, Lemma 3.1 shows that any such non-zero polynomial must be the zero polynomial. This is a contradiction.
+
+Therefore, we must have:
+$$ (n+1)|N| \ge \dim V. $$
+Rearranging and substituting the expression for $\dim V$:
+$$ |N| \ge \frac{\dim V}{n+1} = \frac{1}{n+1}\left(\binom{2q+n-3}{n} - (n-1)\binom{q+n-3}{n}\right). $$
+\end{proof}
+
+\section{Asymptotic Analysis}
+
+We analyze the asymptotic behavior as $q \to \infty$ for fixed $n$. We use the approximation $\binom{Aq+B}{n} = \frac{(Aq)^n}{n!} + O(q^{n-1})$.
+$$ \dim V = \frac{(2q)^n}{n!} + O(q^{n-1}) - (n-1)\left(\frac{q^n}{n!} + O(q^{n-1})\right) $$
+$$ \dim V = \frac{q^n}{n!}(2^n - (n-1)) + O(q^{n-1}) = \frac{q^n}{n!}(2^n - n + 1) + O(q^{n-1}). $$
+The lower bound is $|N| \ge C_n q^n + O(q^{n-1})$, where the constant $C_n$ is:
+$$ C_n = \frac{2^n-n+1}{(n+1) \cdot n!} = \frac{2^n-n+1}{(n+1)!}. $$
+
+\end{document}

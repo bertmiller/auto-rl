@@ -1,0 +1,124 @@
+\documentclass{amsart}
+\usepackage{amsmath, amssymb}
+\usepackage[english]{babel}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+
+\newcommand{\Fp}{\mathbb{F}_p}
+
+\title[Size of a Kakeya Set in $\Fp^3$]{On the Size of a Specific Kakeya Set Construction in $\Fp^3$}
+\author{Anonymous}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We determine the precise size of a particular Kakeya set $K$ constructed in $\Fp^3$, where $p$ is an odd prime. The construction is a union of two sets, one three-dimensional and one planar. The final formula for $|K|$ depends on the value of $p$ modulo 4, and is expressed concisely using the Legendre symbol.
+\end{abstract}
+
+\section{Introduction and Definitions}
+
+Let $p$ be an odd prime and let $\Fp$ be the finite field with $p$ elements. We denote by $S$ the set of squares in $\Fp$, including 0. The size of this set is $|S| = \frac{p+1}{2}$. We let $S^* = S \setminus \{0\}$ be the set of non-zero squares, with $|S^*| = \frac{p-1}{2}$.
+
+The object of study is a Kakeya set $K \subset \Fp^3$ constructed as the union of two subsets, $K_1$ and $K_2$.
+
+\begin{definition}
+The components of the Kakeya set $K$ are defined as follows:
+\begin{enumerate}
+    \item $K_1 = \{(x, y, z) \in \Fp^3 \mid x^2+4y \in S \text{ and } x^2+4z \in S \}$.
+    \item $K_2$ is a set contained in the plane $x=0$, defined as the union of $K_{2a}$ and $K_{2b}$, where:
+    \begin{itemize}
+        \item $K_{2a} = \{(0, y, z) \in \Fp^3 \mid y^2 - z \in S\}$.
+        \item $K_{2b} = \{(0, 0, z) \in \Fp^3 \mid z \in \Fp\}$.
+    \end{itemize}
+\end{enumerate}
+The Kakeya set is then $K = K_1 \cup K_2$.
+\end{definition}
+
+Our goal is to compute the cardinality of $K$. We will do so using the Principle of Inclusion-Exclusion, $|K| = |K_1| + |K_2| - |K_1 \cap K_2|$.
+
+\section{Main Result}
+
+The main result of this paper is the explicit formula for the size of $K$.
+
+\begin{theorem}\label{thm:main}
+Let $p$ be an odd prime. The size of the Kakeya set $K$ is given by
+\[
+|K| = \frac{2p^3 + 7p^2 + 3p - 4 + (p-1)\left(\frac{-1}{p}\right)}{8}.
+\]
+This can be broken down into two cases depending on $p \pmod 4$:
+\begin{enumerate}
+    \item If $p \equiv 1 \pmod 4$, then $|K| = \frac{2p^3 + 7p^2 + 4p - 5}{8}$.
+    \item If $p \equiv 3 \pmod 4$, then $|K| = \frac{2p^3 + 7p^2 + 2p - 3}{8}$.
+\end{enumerate}
+\end{theorem}
+
+\section{Proof of the Main Theorem}
+We proceed by calculating the size of each term in the inclusion-exclusion formula.
+
+\subsection{Calculation of $|K_1|$}
+For a fixed $x \in \Fp$, we count the number of pairs $(y,z)$ satisfying the conditions. Since $p$ is odd, 4 is invertible in $\Fp$. The map $y \mapsto x^2+4y$ is a bijection from $\Fp$ to $\Fp$. Thus, there are $|S|$ choices for $y$ such that $x^2+4y \in S$, and similarly $|S|$ choices for $z$.
+\[
+|K_1| = \sum_{x \in \Fp} |S|^2 = p \left(\frac{p+1}{2}\right)^2 = \frac{p(p^2+2p+1)}{4} = \frac{p^3+2p^2+p}{4}.
+\]
+
+\subsection{Calculation of $|K_2|$}
+We use inclusion-exclusion for $K_2 = K_{2a} \cup K_{2b}$: $|K_2| = |K_{2a}| + |K_{2b}| - |K_{2a} \cap K_{2b}|$.
+\begin{itemize}
+    \item For a fixed $y \in \Fp$, the map $z \mapsto y^2 - z$ is a bijection, so there are $|S|$ choices for $z$. Thus, $|K_{2a}| = p|S| = p\frac{p+1}{2}$.
+    \item By definition, $|K_{2b}| = p$.
+    \item The intersection is $K_{2a} \cap K_{2b} = \{(0, 0, z) \mid 0^2-z \in S\} = \{(0,0,z) \mid -z \in S\}$. The number of such $z$ is $|S|$, so $|K_{2a} \cap K_{2b}| = \frac{p+1}{2}$.
+\end{itemize}
+Combining these gives:
+\[
+|K_2| = p\frac{p+1}{2} + p - \frac{p+1}{2} = \frac{p^2+p+2p-(p+1)}{2} = \frac{p^2+2p-1}{2}.
+\]
+
+\subsection{Calculation of the Intersection $|K_1 \cap K_2|$}
+The intersection $K_1 \cap K_2$ consists of points $(0,y,z)$ that belong to both $K_1$ and $K_2$.
+A point $(0,y,z)$ is in $K_1$ if $4y \in S$ and $4z \in S$. Since $4=2^2 \in S^*$, this is equivalent to $y \in S$ and $z \in S$. Let $K_S = \{(0,y,z) \mid y \in S, z \in S\}$. Then $K_1 \cap K_2 = K_S \cap K_2$.
+
+We apply inclusion-exclusion again: $|K_S \cap K_2| = |K_S \cap K_{2a}| + |K_S \cap K_{2b}| - |K_S \cap K_{2a} \cap K_{2b}|$.
+Let $I_a = K_S \cap K_{2a}$ and $I_b = K_S \cap K_{2b}$.
+\begin{itemize}
+    \item $I_b = \{(0,0,z) \mid 0 \in S, z \in S\} = \{(0,0,z) \mid z \in S\}$. So $|I_b| = |S| = \frac{p+1}{2}$.
+    \item $I_a = \{(0,y,z) \mid y \in S, z \in S, y^2-z \in S\}$. To calculate $|I_a|$, we let $N_S(A)$ be the number of solutions to $w_1+w_2=A$ with $w_1, w_2 \in S$. A standard result from the theory of finite fields gives that for $A \in \Fp^*$, the number of solutions to $u^2+v^2=A$ is $p - \left(\frac{-1}{p}\right)$. From this, one can derive the number of solutions for $w_1+w_2=A$ where $w_1,w_2$ are squares. Let $N_0 = N_S(0)$, which is the number of $z \in S$ such that $-z \in S$. For $A \in S^*$, it is known that $N_S(A) = \frac{p+4-\left(\frac{-1}{p}\right)}{4}$.
+    We calculate $|I_a|$ by summing over $y \in S$: $|I_a| = \sum_{y \in S} N_S(y^2)$.
+    \[
+    |I_a| = N_S(0^2) + \sum_{y \in S^*} N_S(y^2) = N_0 + |S^*| \cdot \frac{p+4-\left(\frac{-1}{p}\right)}{4}
+    \]
+    \[
+    |I_a| = N_0 + \frac{p-1}{2} \cdot \frac{p+4-\left(\frac{-1}{p}\right)}{4} = N_0 + \frac{(p-1)(p+4-\left(\frac{-1}{p}\right))}{8}.
+    \]
+    \item The triple intersection is $I_a \cap I_b = \{(0,0,z) \mid 0 \in S, z \in S, 0^2-z \in S\}$, which is $\{(0,0,z) \mid z \in S, -z \in S\}$. The size is exactly $N_0$.
+\end{itemize}
+Therefore,
+\begin{align*}
+|K_1 \cap K_2| &= |I_a| + |I_b| - N_0 \\
+&= \left(N_0 + \frac{(p-1)(p+4-\left(\frac{-1}{p}\right))}{8}\right) + \frac{p+1}{2} - N_0 \\
+&= \frac{p^2+3p-4 - (p-1)\left(\frac{-1}{p}\right)}{8} + \frac{4p+4}{8} \\
+&= \frac{p^2+7p-(p-1)\left(\frac{-1}{p}\right)}{8}.
+\end{align*}
+
+\subsection{Final Calculation of $|K|$}
+We combine the results using a common denominator of 8.
+\begin{itemize}
+    \item $|K_1| = \frac{2p^3+4p^2+2p}{8}$
+    \item $|K_2| = \frac{4p^2+8p-4}{8}$
+    \item $|K_1 \cap K_2| = \frac{p^2+7p-(p-1)\left(\frac{-1}{p}\right)}{8}$
+\end{itemize}
+\begin{align*}
+|K| &= |K_1| + |K_2| - |K_1 \cap K_2| \\
+&= \frac{1}{8} \left[ (2p^3+4p^2+2p) + (4p^2+8p-4) - (p^2+7p-(p-1)\left(\frac{-1}{p}\right)) \right] \\
+&= \frac{1}{8} \left[ 2p^3 + (4+4-1)p^2 + (2+8-7)p - 4 + (p-1)\left(\frac{-1}{p}\right) \right] \\
+&= \frac{2p^3 + 7p^2 + 3p - 4 + (p-1)\left(\frac{-1}{p}\right)}{8}.
+\end{align*}
+This completes the proof of Theorem \ref{thm:main}. The specific cases follow from the value of the Legendre symbol $\left(\frac{-1}{p}\right)$, which is $1$ for $p \equiv 1 \pmod 4$ and $-1$ for $p \equiv 3 \pmod 4$.
+
+\end{document}

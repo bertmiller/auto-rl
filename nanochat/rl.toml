@@ -1,0 +1,66 @@
+max_steps = 3000
+seq_len = 32768
+
+[model]
+name = "Qwen/Qwen3.5-9B"
+implementation = "auto"
+
+[model.lora]
+enabled = true
+rank = 128
+alpha = 256
+target_modules = [
+    "q_proj", "k_proj", "v_proj", "o_proj",
+    "gate_proj", "up_proj", "down_proj",
+]
+
+[optimization]
+learning_rate = 5e-7
+lr_scheduler = "cosine"
+warmup_steps = 100
+max_grad_norm = 0.5
+
+[orchestrator]
+batch_size = 32
+micro_batch_size = 2
+gradient_accumulation_steps = 16
+rollouts_per_example = 2       # 2 rollouts per seed; limited by 2 sandbox GPUs
+max_tokens = 4096              # enough for a full train.py rewrite per turn
+num_workers = 2                # 2 parallel rollouts on 4-GPU setup (1 inference + 1 trainer + 2 sandbox)
+max_pending_rollouts = 8
+rollout_timeout_secs = 5400    # 90min: 15 × 300s + sandbox overhead
+
+[orchestrator.env]
+id = "autoresearch"
+
+[orchestrator.env.env_args]
+max_experiments = 5            # short episodes for proof-of-concept
+sandbox_pool_size = 2
+sandbox_gpu_ids = [2, 3]       # reserve GPUs 0-1 for inference + trainer
+
+[orchestrator.algorithm]
+name = "grpo"
+epsilon = 0.2
+epsilon_high = 0.25
+use_advantage_normalization = true
+use_difficulty_buffer = false  # single fixed task; difficulty buffer not applicable
+
+[orchestrator.sampling]
+temperature = 0.8              # high enough to get diverse edits across 4 rollouts
+top_p = 0.95
+
+[inference]
+tensor_parallel_size = 1          # 9B fits on a single H100
+max_model_len = 32768          # full train.py + history fits comfortably
+gpu_memory_utilization = 0.85
+enable_auto_tool_choice = true
+tool_call_parser = "hermes"
+
+[checkpoint]
+save_on_completion = true
+
+[logging]
+wandb_project = "autoresearch-rl"
+log_every_n_steps = 5
+eval_every_n_steps = 100
+eval_num_examples = 2

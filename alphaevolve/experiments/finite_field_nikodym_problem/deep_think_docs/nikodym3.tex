@@ -1,0 +1,93 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{geometry}
+
+\geometry{a4paper, margin=1in}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+
+\begin{document}
+
+This analysis explores the possibility of adapting the proofs by Bukh and Chao (arXiv:2108.00074), which established sharp lower bounds for Kakeya sets, to derive lower bounds for Nikodym sets.
+
+We find that a direct adaptation of the Bukh-Chao (BC) arguments fails because their contradiction mechanism relies inherently on the Kakeya property (having full lines in all directions). However, by modifying the parameters and the contradiction argument, we can successfully adapt the underlying idea of using \emph{anisotropic} polynomial spaces (introduced in the BC paper, Section 2) to obtain improved general lower bounds for Nikodym sets using the polynomial method.
+
+\section{Limitations of the Bukh-Chao Strategy for Nikodym Sets}
+
+The BC strategy involves finding a polynomial $P$ in an anisotropic space $V$ that vanishes with high multiplicity $m$ on a Kakeya set $K$. The parameters are tuned such that $\deg P < mq$.
+\begin{enumerate}
+    \item \textbf{Vanishing on Lines:} Since $K$ contains full lines $L$, $P|_L$ has $\ge mq$ zeros, forcing $P|_L \equiv 0$.
+    \item \textbf{Homogeneous Part:} This implies the leading homogeneous part $P_d$ vanishes on the direction of $L$.
+    \item \textbf{Kakeya Condition:} Since this holds for all directions, $P_d$ vanishes everywhere.
+    \item \textbf{Contradiction:} The anisotropic constraints on $V$ force $P_d = 0$.
+\end{enumerate}
+This strategy fails for a Nikodym set $N$ for two main reasons:
+\begin{enumerate}
+    \item \textbf{Insufficient Multiplicity:} Nikodym lines guarantee only $q-1$ points in $N$. The number of zeros is $m(q-1)$. If $\deg P \approx mq$, we cannot force $P|_L \equiv 0$.
+    \item \textbf{Uncontrolled Directions:} Even if we force $P|_L \equiv 0$, we only know $P_d$ vanishes on the directions of the Nikodym lines. These directions might not cover the entire space, so we cannot conclude $P_d=0$. The contradiction mechanism fails.
+\end{enumerate}
+
+\section{An Adapted Proof using Anisotropic Spaces}
+
+We adapt the approach by utilizing an anisotropic polynomial space inspired by BC, but we adjust the total degree and employ a different contradiction argument that works for Nikodym sets. This argument relies on forcing the polynomial $P$ itself (not just $P_d$) to be zero, handling the fact that anisotropic spaces may contain non-zero polynomials that vanish everywhere.
+
+We use multiplicity $m=2$. A polynomial vanishes to order 2 at $p$ if $P(p)=0$ and all first-order partial derivatives $\partial_i P(p) = 0$. This imposes $n+1$ constraints.
+
+\subsection*{Setup}
+We require $\deg P < 2(q-1)$. Let the maximum degree be $D = 2q-3$ (assuming $q \ge 2$).
+We define the anisotropic polynomial space $V$ by relaxing the constraint on the variable $x_n$:
+$$V = \{P \in \mathbb{F}_q[x_1, \dots, x_n] : \deg P \le D, \text{ and } \deg_{x_i} P < q \text{ for } i=1, \dots, n-1\}.$$
+
+\begin{lemma}[The Key Lemma]
+Let $N$ be a Nikodym set in $\mathbb{F}_q^n$. If a polynomial $P \in V$ vanishes to order 2 at every point of $N$, then $P$ is the zero polynomial.
+\end{lemma}
+
+\begin{proof}
+\begin{enumerate}
+    \item \textbf{P vanishes everywhere.} Let $p \in \mathbb{F}_q^n$. Let $L_p$ be the Nikodym line such that $L_p \setminus \{p\} \subset N$. The restriction $P|_{L_p}$ has degree $\le 2q-3$. It vanishes to order 2 on $q-1$ points, so it has at least $2(q-1)$ zeros. Since Zeros $>$ Degree, $P|_{L_p} \equiv 0$. Thus $P(p) = 0$. $P$ vanishes on all of $\mathbb{F}_q^n$.
+    \item \textbf{Polynomial Reduction.} We perform polynomial division by $(x_n^q - x_n)$.
+    $P(x) = (x_n^q - x_n)Q(x) + R(x)$, where $\deg_{x_n} R < q$.
+    Since $P$ and $(x_n^q - x_n)$ vanish everywhere, $R$ vanishes everywhere.
+    By the definition of $V$ and properties of polynomial division, $\deg_{x_i} R < q$ for $i=1..n-1$.
+    Since $R$ has individual degree $< q$ in all variables and vanishes everywhere, $R \equiv 0$.
+    Thus, $P(x) = (x_n^q - x_n)Q(x)$.
+    \item \textbf{Analyzing the Quotient Q.} Since $\deg P \le 2q-3$, we have $\deg Q \le (2q-3) - q = q-3$.
+    \item \textbf{Using the Derivatives.} We examine the partial derivative with respect to $x_n$. Note that $\partial_n(x_n^q - x_n) = qx_n^{q-1} - 1 = -1$ in $\mathbb{F}_q$.
+    $\partial_n P = (-1) \cdot Q(x) + (x_n^q - x_n)\partial_n Q(x)$.
+    Let $p \in N$. Since $P$ vanishes to order 2 on $N$, $\partial_n P(p) = 0$. Also, $(x_n^q - x_n)(p) = 0$.
+    $0 = -Q(p) + 0$. Thus $Q(p) = 0$. So $Q$ vanishes on $N$.
+    \item \textbf{Conclusion.} $Q$ vanishes on $N$ and $\deg Q \le q-3$. For any $p$, $Q|_{L_p}$ has degree $\le q-3$ and at least $q-1$ zeros. Thus $Q|_{L_p} \equiv 0$. $Q$ vanishes everywhere. Since $\deg Q < q$, $Q$ is the zero polynomial. Consequently, $P$ is the zero polynomial.
+\end{enumerate}
+(End of Proof)
+\end{proof}
+
+\subsection*{Dimension Calculation and Lower Bound}
+We calculate $\dim V$ using inclusion-exclusion for $D=2q-3$ and constraints on the first $n-1$ variables.
+$$ \dim V = \sum_{S \subseteq \{1..n-1\}} (-1)^{|S|} \binom{D - |S|q + n}{n}. $$
+$$ \dim V = \binom{2q-3+n}{n} - (n-1)\binom{q-3+n}{n} + \binom{n-1}{2}\binom{-3+n}{n} - \dots $$
+For $n \ge 3$, $\binom{n-3}{n}=0$, so terms for $|S| \ge 2$ vanish.
+$$ \dim V = \binom{2q-3+n}{n} - (n-1)\binom{q-3+n}{n}. $$
+By the Lemma, the linear constraints imposed on $V$ must be at least the dimension of $V$.
+$(n+1)|N| \ge \dim V$.
+
+\begin{theorem}
+Let $N$ be a Nikodym set in $\mathbb{F}_q^n$ ($n \ge 3$). Then,
+$$|N| \ge \frac{1}{n+1} \left( \binom{2q+n-3}{n} - (n-1)\binom{q+n-3}{n} \right).$$
+\end{theorem}
+
+\subsection*{Asymptotic Results}
+As $q \to \infty$:
+$$ \dim V = \frac{(2q)^n}{n!} - (n-1)\frac{q^n}{n!} + O(q^{n-1}) = \frac{q^n}{n!}(2^n - n + 1) + O(q^{n-1}). $$
+The lower bound is $|N| \ge C_n q^n + O(q^{n-1})$, where $C_n = \frac{2^n - n + 1}{(n+1)!}$.
+
+This provides an improvement over the previously best-known general lower bounds for Nikodym sets derived from the standard (isotropic) polynomial method (which asymptotically approach $(1/2)^n q^n$).
+\begin{itemize}
+    \item $n=3: C_3 = \frac{8-3+1}{24} = 1/4$. The bound is $|N| \ge 0.25q^3$. (Previous polynomial bound $\approx 0.2083q^3$).
+    \item $n=4: C_4 = \frac{16-4+1}{120} = \frac{13}{120} \approx 0.1083$. (Previous bound $1/16 = 0.0625$).
+\end{itemize}
+This demonstrates that the ideas in the Bukh-Chao paper can indeed be adapted to yield improved bounds for Nikodym sets.
+
+\end{document}

@@ -1,0 +1,100 @@
+\documentclass{article}
+\usepackage{amsmath, amssymb, amsthm, amsfonts}
+\usepackage[margin=1in]{geometry}
+
+\title{Analysis of a Nikodym Set Construction in $\mathbb{F}_{p^2}^2$}
+\author{Generated via AI}
+\date{\today}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
+
+\newcommand{\F}{\mathbb{F}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We analyze a specific construction of a Nikodym set in the affine plane $\F_q^2$ where $q=p^2$ for a large odd prime $p$. We formalize the construction, which is based on the norm map from $\F_{p^2}$ to $\F_p$, and provide an exact formula for the size of the set's complement. This shows that the complement has size approximately $p^3/2$, confirming the construction yields a large Nikodym set.
+\end{abstract}
+
+\section{Introduction}
+
+A Nikodym set $\mathcal{N}$ in an affine space is a set of points such that for every point $x$ in the space but not in $\mathcal{N}$, there is a line through $x$ that is contained entirely within $\mathcal{N}$. In finite affine planes, this definition is equivalent to a set $\mathcal{N}$ such that its complement, $\mathcal{N}^c$, is a set of `blocking points' for lines; that is, every line in the plane intersects $\mathcal{N}$.
+
+We consider the affine plane $\mathcal{A} = \F_q^2$, where $q = p^2$ and $p$ is a large odd prime. We represent the field $\F_q$ as a quadratic extension of $\F_p$, namely $\F_q \cong \F_p[x]/(x^2-k)$, where $k$ is a fixed quadratic non-residue modulo $p$. Any element $z \in \F_q$ can be uniquely written as $z = a + b\alpha$ where $a, b \in \F_p$ and $\alpha^2 = k$. A point in the plane $\mathcal{A}$ is an ordered pair $(u, v)$ with $u, v \in \F_q$. We can represent this point using coordinates from $\F_p$ as $((x_1, x_2), (y_1, y_2))$, where $u = x_1 + x_2\alpha$ and $v = y_1 + y_2\alpha$. The total number of points in the plane is $q^2 = p^4$.
+
+\section{The Construction}
+
+Let us define the components of the construction.
+
+\begin{definition}[The Norm Map]
+The field norm $N: \F_{p^2} \to \F_p$ is defined by $N(z) = z^{p+1}$. For an element $z = y_1 + y_2\alpha \in \F_{p^2}$, the norm is given by:
+\[ N(z) = (y_1 + y_2\alpha)(y_1 - y_2\alpha) = y_1^2 - k y_2^2 \pmod{p} \]
+\end{definition}
+
+\begin{definition}[The Forbidden Set]
+Let $QNR_p \subset \F_p^*$ be the set of all $(p-1)/2$ quadratic non-residues modulo $p$. Let $m = \max(1, \lfloor \log p + 1/2 \rfloor)$, and let $R_m = \{r_1, r_2, \ldots, r_m\}$ be the set of the $m$ smallest positive integers that are quadratic residues modulo $p$. The \textit{forbidden set} $S \subset \F_p^*$ is defined as:
+\[ S = QNR_p \cup R_m \]
+The size of this set is $|S| = \frac{p-1}{2} + m$.
+\end{definition}
+
+\begin{definition}[The Nikodym Set Complement]
+The set $\mathcal{N}^c$, which is the complement of the Nikodym set $\mathcal{N}$, is defined as the set of points $(u,v) \in \F_{p^2}^2$ which, in $\F_p^4$ coordinates $((x_1, x_2), (y_1, y_2))$, satisfy the following two conditions simultaneously:
+\begin{enumerate}
+    \item $N(v) \in S$
+    \item $2x_1 \equiv N(v) \pmod{p}$
+\end{enumerate}
+The Nikodym set is then $\mathcal{N} = \F_{p^2}^2 \setminus \mathcal{N}^c$.
+\end{definition}
+
+\section{Main Result}
+
+Our main goal is to compute the exact size of the complement, $\mathcal{N}^c$.
+
+\begin{theorem}
+Let $p$ be a large odd prime. The size of the complement $\mathcal{N}^c$ of the Nikodym set defined above is given by:
+\[ |\mathcal{N}^c| = \left( \frac{p-1}{2} + \max(1, \lfloor \log p + 1/2 \rfloor) \right) \cdot p(p+1) \]
+\end{theorem}
+
+\begin{proof}
+To find the size of $\mathcal{N}^c$, we must count the number of 4-tuples $(x_1, x_2, y_1, y_2) \in \F_p^4$ that satisfy the defining conditions. We can partition the count based on the value $c = N(v) \in S$.
+\[ |\mathcal{N}^c| = \sum_{c \in S} |\{ ((x_1, x_2), (y_1, y_2)) \in \F_p^4 \mid N(y_1 + y_2\alpha) = c \text{ and } 2x_1 = c \}| \]
+For any fixed value $c \in S$, the conditions on $(x_1, x_2)$ and $(y_1, y_2)$ are independent. We can count the number of solutions for each pair separately.
+
+\textbf{1. Counting solutions for $(y_1, y_2)$:}
+We need to find the number of solutions $(y_1, y_2) \in \F_p^2$ to the equation $y_1^2 - k y_2^2 = c$. This is a well-known result for counting points on quadratic forms over finite fields. Since every element $c \in S$ is non-zero, the number of solutions is given by $p - \chi(k)$, where $\chi$ is the Legendre symbol. By construction, $k$ is a quadratic non-residue, so $\chi(k) = -1$.
+Therefore, for any $c \in S$, the number of pairs $(y_1, y_2)$ such that $N(y_1 + y_2\alpha) = c$ is $p - (-1) = p+1$.
+
+\textbf{2. Counting solutions for $(x_1, x_2)$:}
+For a fixed $c$, we need to find the number of pairs $(x_1, x_2) \in \F_p^2$ satisfying $2x_1 = c$.
+\begin{itemize}
+    \item Since $p$ is an odd prime, $2$ is invertible in $\F_p$. Thus, the equation $2x_1 = c$ has a unique solution for $x_1$, namely $x_1 = c \cdot 2^{-1}$.
+    \item The variable $x_2$ is not constrained by any condition, so it can take any of the $p$ values in $\F_p$.
+\end{itemize}
+Thus, for any fixed $c$, there are $1 \times p = p$ possible pairs $(x_1, x_2)$.
+
+\textbf{3. Combining the results:}
+For each of the $|S|$ possible values of $c$ in the forbidden set, there are $(p+1)$ ways to choose $(y_1, y_2)$ and $p$ ways to choose $(x_1, x_2)$. The total number of points in $\mathcal{N}^c$ is the product of these counts, summed over all possible values of $c$:
+\[ |\mathcal{N}^c| = \sum_{c \in S} (p+1) \cdot p = |S| \cdot p(p+1) \]
+Substituting the size of $S = QNR_p \cup R_m$:
+\[ |S| = \frac{p-1}{2} + \max(1, \lfloor \log p + 1/2 \rfloor) \]
+This gives the final result:
+\[ |\mathcal{N}^c| = \left( \frac{p-1}{2} + \max(1, \lfloor \log p + 1/2 \rfloor) \right) \cdot p(p+1) \]
+\end{proof}
+
+\begin{corollary}
+For a very large prime $p$, the size of the complement is asymptotically given by:
+\[ |\mathcal{N}^c| \approx \frac{p^3}{2} \]
+\end{corollary}
+
+\begin{proof}
+For large $p$, the term $\max(1, \lfloor \log p + 1/2 \rfloor)$ is of order $O(\log p)$ and is negligible compared to $(p-1)/2 \approx p/2$. Similarly, $p+1 \approx p$.
+\[ |\mathcal{N}^c| \approx \left(\frac{p}{2}\right) \cdot p \cdot p = \frac{p^3}{2} \]
+The density of the complement in the full space of size $p^4$ is therefore approximately $\frac{p^3/2}{p^4} = \frac{1}{2p}$, which tends to zero as $p \to \infty$.
+\end{proof}
+
+\end{document}

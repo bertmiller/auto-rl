@@ -1,0 +1,75 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb, amsfonts}
+
+\title{A Note on a Nikodym Set Construction in $\mathbb{F}_{p^2}^2$}
+\author{A. Gemini}
+\date{\today}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{construction}{Construction}
+\newtheorem{lemma}{Lemma}
+\newenvironment{proof}{\paragraph{Proof:}}{\hfill$\square$}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We analyze an algebraic construction of a large Nikodym set in the vector space $\mathbb{F}_{p^2}^2$, where $p$ is a large prime. The construction is a refinement of the work by Guo, Kopparty, and Sudan (2013) and defines the set as the complement of a set $M' \subset \mathbb{F}_{p^2}^2$. We show that the complement has size approximately $p^3$, making it a small fraction of the total space of size $p^4$.
+\end{abstract}
+
+\section{Preliminaries}
+
+Let $p$ be a prime. We consider the finite field $\mathbb{F}_{p^2}$, which is a quadratic extension of $\mathbb{F}_p$. Let $k \in \mathbb{F}_p$ be a quadratic non-residue. Then we can write $\mathbb{F}_{p^2} = \mathbb{F}_p(\sqrt{k})$. Any element $z \in \mathbb{F}_{p^2}$ can be uniquely represented as $z = a + b\sqrt{k}$ for $a, b \in \mathbb{F}_p$.
+
+We define the Trace and Norm maps from $\mathbb{F}_{p^2}$ to $\mathbb{F}_p$:
+\begin{itemize}
+    \item The Trace, $Tr(z) = z + z^p$. For $z = a + b\sqrt{k}$, $Tr(z) = (a + b\sqrt{k}) + (a - b\sqrt{k}) = 2a$.
+    \item The Norm, $N(z) = z \cdot z^p = z^{p+1}$. For $z = a + b\sqrt{k}$, $N(z) = (a + b\sqrt{k})(a - b\sqrt{k}) = a^2 - kb^2$.
+\end{itemize}
+Both maps are surjective from $\mathbb{F}_{p^2}$ to $\mathbb{F}_p$. The kernel of the Trace map is a one-dimensional $\mathbb{F}_p$-subspace of $\mathbb{F}_{p^2}$, so for any $c \in \mathbb{F}_p$, the equation $Tr(z)=c$ has $p^2/p = p$ solutions for $z \in \mathbb{F}_{p^2}$.
+
+\section{The Construction}
+
+The Nikodym set $N'$ is constructed in the affine plane $\mathbb{F}_{p^2} \times \mathbb{F}_{p^2}$ by defining its complement, a set $M'$.
+
+\begin{construction}
+Let $g$ be a generator of the multiplicative group $\mathbb{F}_{p^2}^*$. Let $m$ be an integer, $1 \le m < p^2-1$. Define a special set $S \subset \mathbb{F}_{p^2}$ as
+$$ S = \{ g^i \mid 1 \le i \le m \}. $$
+The complement set $M'$ is defined as
+$$ M' = \{ (x, y) \in \mathbb{F}_{p^2}^2 \mid Tr(x) = N(y) \text{ and } y \notin S \}. $$
+The Nikodym set is then $N' = (\mathbb{F}_{p^2} \times \mathbb{F}_{p^2}) \setminus M'$.
+\end{construction}
+
+The parameter $m = |S|$ is chosen to be sufficiently large to ensure that $N'$ is a valid Nikodym set. The underlying theory suggests that $S$ must be a hitting set for a family of $p$-dimensional subspaces, leading to a choice of $m > p \log(p^2-1)$. For the purpose of this note, we treat $m$ as a parameter.
+
+\section{Size Analysis}
+
+We now determine the cardinality of the complement $M'$ and the Nikodym set $N'$.
+
+\begin{theorem}
+The size of the complement set is $|M'| = p^3 - m p$. The size of the Nikodym set is $|N'| = p^4 - p^3 + m p$.
+\end{theorem}
+
+\begin{proof}
+The total number of points in the space is $|\mathbb{F}_{p^2} \times \mathbb{F}_{p^2}| = (p^2)^2 = p^4$.
+
+Let us first compute the size of the base set $M = \{ (x, y) \in \mathbb{F}_{p^2}^2 \mid Tr(x) = N(y) \}$. We can iterate over all possible values of $y \in \mathbb{F}_{p^2}$. For each $y$, $N(y)$ is a fixed element $c \in \mathbb{F}_p$. We then need to count the number of $x \in \mathbb{F}_{p^2}$ such that $Tr(x) = c$. As the Trace map is a $p$-to-$1$ homomorphism from $(\mathbb{F}_{p^2}, +)$ to $(\mathbb{F}_p, +)$, there are exactly $p$ solutions for $x$ for any given $c$.
+Thus, for each of the $p^2$ choices for $y$, there are $p$ choices for $x$. This gives
+$$ |M| = p^2 \cdot p = p^3. $$
+
+The set $M'$ is formed by removing points $(x, y)$ from $M$ where $y \in S$. The set of points to be removed is $M \setminus M' = \{ (x, y) \in \mathbb{F}_{p^2}^2 \mid Tr(x) = N(y) \text{ and } y \in S \}$.
+The size of this set is calculated similarly. We iterate over the $m$ possible values for $y \in S$. For each such $y$, we require the number of $x$ satisfying $Tr(x) = N(y)$. As before, this is exactly $p$.
+Therefore, the number of points removed from $M$ is
+$$ |M \setminus M'| = |S| \cdot p = m p. $$
+The size of the complement is then
+$$ |M'| = |M| - |M \setminus M'| = p^3 - m p. $$
+Consequently, the size of the Nikodym set is
+$$ |N'| = p^4 - |M'| = p^4 - (p^3 - m p) = p^4 - p^3 + m p. $$
+\end{proof}
+
+For large $p$, a suitable choice for $m$ is approximately $2p \ln p$. In this regime, the size of the complement is
+$$ |M'| \approx p^3 - p(2p \ln p) = p^3 - 2p^2 \ln p. $$
+As $p \to \infty$, the $p^3$ term dominates, and thus $|M'| \approx p^3$.
+
+\end{document}

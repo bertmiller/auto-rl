@@ -318,6 +318,21 @@ async def sandbox_run_command(
             "output": f"Error: '{cmd_name}' not allowed. Allowed: {sorted(ALLOWED_COMMANDS)}",
         }
 
+    # Prevent cp from writing into tests/ (anti-cheat)
+    if cmd_name == "cp" and len(parts) >= 3:
+        dest = parts[-1]
+        if dest.startswith("tests/") or dest == "tests" or "/tests/" in dest:
+            return {
+                "success": False,
+                "output": "Error: cannot copy into tests/ directory.",
+            }
+        # Also block overwriting problem.py
+        if dest == "problem.py" or dest.endswith("/problem.py"):
+            return {
+                "success": False,
+                "output": "Error: cannot overwrite problem.py.",
+            }
+
     exit_code, stdout, stderr = await _exec(sandbox_id, command, timeout=timeout_secs)
 
     if exit_code != 0:

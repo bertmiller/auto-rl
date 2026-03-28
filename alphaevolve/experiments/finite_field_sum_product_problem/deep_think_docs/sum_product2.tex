@@ -1,0 +1,117 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{geometry}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\geometry{a4paper, margin=1in}
+
+\title{Algorithmic Construction of a Subset in $\mathbb{F}_p$ with Small Sum and Product Sets}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+We document the explicit construction of a subset $X \subset \mathbb{F}_p$, where $p$ is a large prime satisfying $p \equiv 1 \pmod{4}$. The objective of this construction is to minimize $\max(|X+X|, |X \cdot X|)$, where $X+X$ is the sumset and $X \cdot X$ is the product set. The size of the constructed set $X$ is fixed to $k = \lfloor\sqrt{p}\rfloor$.
+
+The methodology is based on leveraging the structure of Gaussian integers $\mathbb{Z}[i]$. We select elements corresponding to $a+bi$ where the norm $a^2+b^2$ has small prime factors, which aims to constrain the size of the product set. Additionally, we prioritize elements where $\max(|a|, |b|)$ is small, which aims to constrain the size of the sumset.
+
+\section{Preliminaries}
+
+\subsection{Largest Prime Factor (LPF)}
+We denote LPF$(n)$ as the largest prime factor of an integer $n$. The construction requires pre-computing LPFs up to a certain limit using a sieve method. The specific implementation used follows the conventions that LPF(0)=1 and LPF(1)=1.
+
+\begin{algorithm}[H]
+\caption{LPF Sieve Implementation}\label{alg:lpf_sieve}
+\begin{algorithmic}
+\Procedure{LPFSieve}{limit}
+    \State Initialize an array \texttt{lpf} of size \texttt{limit} + 1 with zeros.
+    \For{$i = 2$ to \texttt{limit}}
+        \If{\texttt{lpf}[i] == 0} \Comment{$i$ is prime}
+            \For{$j = i$ to \texttt{limit} step $i$}
+                \State \texttt{lpf}[j] = $i$
+            \EndFor
+        \EndIf
+    \EndFor
+    \If{\texttt{limit} $\geq 0$}
+        \State \texttt{lpf}[0] = 1
+    \EndIf
+    \If{\texttt{limit} $\geq 1$}
+        \State \texttt{lpf}[1] = 1
+    \EndIf
+    \State \Return \texttt{lpf}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Finding the Square Root of -1}
+Since $p \equiv 1 \pmod 4$, there exists an element $i \in \mathbb{F}_p$ such that $i^2 \equiv -1 \pmod p$. We find this element using a specialization of the Tonelli-Shanks algorithm:
+\begin{enumerate}
+    \item Find a quadratic non-residue $n \in \mathbb{F}_p$. This is done by trial, starting from $n=2$ and incrementing $n$ until an $n$ is found such that $n^{(p-1)/2} \equiv p-1 \pmod p$.
+    \item Compute $i = n^{(p-1)/4} \pmod p$.
+\end{enumerate}
+
+\section{The Construction Algorithm}
+
+The detailed steps for constructing the set $X$ are as follows.
+
+\subsection{Initialization and Parameters}
+1. **Set Size:** Define the target size $k = \lfloor\sqrt{p}\rfloor$.
+
+\noindent 2. **Find $i$:** Compute $i \in \mathbb{F}_p$ such that $i^2 \equiv -1 \pmod p$ as described in Section 2.2.
+
+\subsection{Defining the Search Space}
+We search for integer pairs $(a, b)$ within a circular region. The radius of this region is determined by specific constants to ensure a sufficient search space.
+
+1. **Search Radius ($R$):** The radius is calculated using the factor 3.2:
+    \[ R = \lfloor 3.2 \cdot \sqrt{k} \rfloor + 5 \]
+
+2. **Maximum Norm ($N_{\max}$):** The maximum norm considered is $N_{\max} = R^2$.
+
+\subsection{Pre-computation}
+Compute the Largest Prime Factor table up to $N_{\max}$ using the \texttt{LPFSieve} procedure (Algorithm \ref{alg:lpf_sieve}).
+
+\subsection{Generating and Scoring Candidates}
+We iterate over all integer points within the disk of radius $R$ and score them.
+
+1. Initialize an empty list of candidate tuples $C$.
+
+2. Iterate over integers $a$ from $-R$ to $R$.
+
+3. For each $a$, calculate the boundary for $b$:
+   \[ B_{\lim} = \lfloor\sqrt{\max(0, R^2 - a^2)}\rfloor \]
+4. Iterate over integers $b$ from $-B_{\lim}$ to $B_{\lim}$.
+
+5. For each pair $(a, b)$, calculate the following metrics:
+    \begin{itemize}
+        \item The norm: $N = a^2+b^2$.
+        \item The largest prime factor of the norm: $L = \text{LPF}(N)$.
+        \item The $L_\infty$ norm (maximum coordinate magnitude): $M = \max(|a|, |b|)$.
+    \end{itemize}
+6. Add the tuple $(L, N, M, a, b)$ to the list $C$.
+
+\subsection{Sorting and Selection}
+1. **Sorting:** Sort the list $C$ lexicographically in ascending order. This sorting prioritizes the candidates as follows:
+    \begin{enumerate}
+        \item Primary criterion: Minimize $L$ (LPF of the norm).
+        \item Secondary criterion: Minimize $N$ (the norm).
+        \item Tertiary criterion: Minimize $M$ ($L_\infty$ norm).
+    \end{enumerate}
+
+
+\noindent 2. **Selection:** Initialize the set $X = \emptyset$. Iterate through the sorted list $C$. For each tuple $(L, N, M, a, b)$:
+    \begin{itemize}
+        \item If $|X| = k$, terminate the iteration.
+        \item Calculate the corresponding element in $\mathbb{F}_p$:
+          \[ x = (a + b \cdot i) \pmod p \]
+        \item Add $x$ to $X$ (ensuring uniqueness, as $X$ is a set).
+    \end{itemize}
+
+The resulting set $X$ is the output of the construction.
+
+\end{document}
