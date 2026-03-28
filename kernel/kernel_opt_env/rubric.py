@@ -99,25 +99,17 @@ async def notes_reward(
     """
     Small reward for maintaining notes.md.
 
-    Checks that notes.md exists and has been updated with substantive
-    content (not just empty or a single line). Rewards scale with
-    the number of optimization attempts documented.
+    Reads from state["notes_content"] (snapshotted before sandbox release).
+    Rewards scale with the number of non-empty lines, up to 20 = 1.0.
     """
-    from .sandbox import sandbox_read_file
-
-    sid = state.get("sandbox_id")
-    if not sid:
-        return 0.0
-
-    content = await sandbox_read_file(sid, "notes.md")
-    if content.startswith("Error:"):
+    content = state.get("notes_content", "")
+    if not content:
         return 0.0
 
     lines = [l for l in content.strip().split("\n") if l.strip()]
     if len(lines) < 3:
         return 0.0
 
-    # Reward scales with content up to a cap
     return min(len(lines) / 20, 1.0)
 
 

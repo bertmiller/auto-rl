@@ -220,6 +220,13 @@ class KernelOptEnv(vf.StatefulToolEnv):
         if not sid:
             return
 
+        # Snapshot notes.md into state before releasing the sandbox,
+        # so the rubric can score it after the sandbox is gone.
+        from .sandbox import sandbox_read_file
+        notes = await sandbox_read_file(sid, "notes.md")
+        if not notes.startswith("Error:"):
+            state["notes_content"] = notes
+
         episode_id = state.get("episode_id", sid)
         try:
             await sandbox_export_artifacts(sid, episode_id, dict(state))
