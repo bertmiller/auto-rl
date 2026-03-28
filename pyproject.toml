@@ -1,15 +1,18 @@
 [project]
-name = "autoresearch-env"
+name = "auto-rl"
 version = "0.1.0"
-description = "RL environment for training models to improve karpathy/autoresearch"
+description = "Generic RL environments for optimization-by-code-editing"
 requires-python = ">=3.10"
 dependencies = [
     "verifiers>=0.1.0",
     "datasets",
 ]
 
-[project.entry-points."verifiers.envs"]
-autoresearch = "autoresearch_env:load_environment"
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["auto_rl*"]
 
 [build-system]
 requires = ["setuptools>=68.0"]
