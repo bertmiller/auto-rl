@@ -11,63 +11,99 @@ A collection of RL environments where an agent:
 3. Runs a deterministic oracle to measure a scalar metric
 4. Gets reward proportional to improvement
 
-Each environment is a self-contained Python package exposing `load_environment()` as
-a `verifiers.envs` entry point. Training uses GRPO via prime-rl.
+New environments can be created with just a TOML config file + challenge files using the
+`auto_rl` framework. Complex environments can use Python plugin hooks for custom behavior.
 
 ## Repository structure
 
 ```
 auto-rl/
-├── kernel/                     # VLIW SIMD kernel optimization (CPU-only oracle)
-│   ├── kernel_opt_env/         # Environment package
-│   │   ├── __init__.py         # Entry point, dataset, system prompt, starting points
-│   │   ├── env.py              # KernelOptEnv (StatefulToolEnv subclass)
-│   │   ├── sandbox.py          # Directory-based sandbox pool
-│   │   ├── tools.py            # read_file, edit_file, run_tests, run_analysis, run_command
-│   │   └── rubric.py           # log2 speedup + monotonic improvement + auxiliary rewards
-│   ├── original_performance_takehome/  # Challenge files (read-only reference)
-│   ├── starting_points/        # 8 pre-optimized variants for curriculum
-│   ├── test_episode.py         # Manual episode runner (OpenAI-compatible API)
-│   ├── spec.md                 # Full MDP spec
-│   ├── rl.toml                 # prime-rl training config
-│   └── pyproject.toml
+├── auto_rl/                    # Generic RL environment framework
+│   ├── __init__.py             # load_environment(config_path) entry point
+│   ├── config.py               # ProblemConfig dataclass + TOML loader
+│   ├── env.py                  # OptimizationEnv(StatefulToolEnv) — generic environment
+│   ├── sandbox.py              # SandboxPool — dir_copy isolation, acquire/release/reset
+│   ├── tools.py                # Tool factories: read_file, edit_file, run_eval, run_command
+│   └── rewards.py              # Reward library: log/linear improvement, monotonic, failure penalty
 │
-├── nanochat/                   # karpathy/autoresearch optimization (GPU oracle)
-│   ├── autoresearch_env/       # Environment package
-│   │   ├── __init__.py         # Entry point, dataset, system prompt
-│   │   ├── env.py              # AutoresearchEnv (StatefulToolEnv subclass)
-│   │   ├── sandbox.py          # Git-branch sandbox pool with GPU pinning
-│   │   ├── tools.py            # read_file, edit_file, run_experiment, git_commit_or_revert
-│   │   └── rubric.py           # val_bpb improvement + monotonic improvement
-│   ├── spec.md
-│   ├── rl.toml
-│   └── pyproject.toml
+├── problems/                   # Optimization problem environments
+│   ├── kernel/                 # VLIW SIMD kernel optimization (CPU-only oracle)
+│   │   ├── kernel_opt_env/     # Custom environment package (pre-dates generic framework)
+│   │   ├── original_performance_takehome/  # Challenge files
+│   │   ├── starting_points/    # 8 pre-optimized variants for curriculum
+│   │   ├── spec.md             # Full MDP spec
+│   │   ├── rl.toml             # prime-rl training config
+│   │   └── test_episode.py     # Manual episode runner
+│   │
+│   ├── nanochat/               # karpathy/autoresearch optimization (GPU oracle)
+│   │   ├── autoresearch_env/   # Custom environment package
+│   │   ├── spec.md
+│   │   └── rl.toml
+│   │
+│   └── circle-packing/         # Circle packing optimization (WIP)
 │
-└── docs/
-    └── ideas.md                # Future environment ideas
+├── tests/                      # Framework tests
+│   ├── fixtures/               # Sample problem for testing
+│   ├── test_config.py
+│   ├── test_env.py
+│   ├── test_rewards.py
+│   ├── test_sandbox.py
+│   └── test_tools.py
+│
+├── alphaevolve/                # AlphaEvolve problem reference (67 math problems)
+│
+├── docs/
+│   ├── ideas.md                # Proposed environments + prior art survey
+│   └── creating-an-environment.md  # Guide to creating new environments
+│
+└── pyproject.toml              # auto-rl package
 ```
 
-## Environment anatomy
+## Generic framework (auto_rl/)
 
-Every environment follows the same 5-module pattern:
+Most problems need only a TOML config + challenge files:
 
-| Module | Purpose |
-|---|---|
-| `__init__.py` | `load_environment()` entry point, system prompt template, dataset construction |
-| `env.py` | `StatefulToolEnv` subclass — state machine, tool arg injection, response interception |
-| `sandbox.py` | Isolation pool — one sandbox per concurrent rollout, reset between episodes |
-| `tools.py` | Async tool functions with `sandbox_id` injected and hidden from model schema |
-| `rubric.py` | `Rubric(funcs=[...], weights=[...])` composing multiple reward signals |
+```toml
+# problems/my-problem/problem.toml
+[problem]
+name = "my-problem"
+system_prompt = "..."
 
-## Key frameworks
+[files]
+challenge_dir = "challenge"
+editable = ["solution.py"]
+readable = ["solution.py", "verify.py"]
 
-- **verifiers** — provides `StatefulToolEnv`, `Rubric`, tool registration, `State`/`Messages` types
-- **prime-rl** — GRPO training loop, reads `rl.toml` for config
-- **datasets** (HuggingFace) — task sampling
+[oracle]
+command = "python3 verify.py"
+metric_pattern = 'score=([\d.]+)'
+direction = "maximize"
 
-## Environment details
+[reward]
+type = "log"
+baseline = 1.0
 
-### kernel/ — VLIW SIMD kernel optimization
+[episode]
+max_attempts = 20
+```
+
+```python
+from auto_rl import load_environment
+env = load_environment("problems/my-problem/problem.toml")
+```
+
+For complex problems, use plugin hooks:
+```toml
+[plugins]
+setup_hook = "my_hooks:install_variant"
+extra_tools = ["my_hooks:run_analysis"]
+```
+
+See `docs/creating-an-environment.md` for the full guide.
+
+## Problem details
+
+### problems/kernel/ — VLIW SIMD kernel optimization
 
 - **Task:** Optimize `perf_takehome.py` to minimize clock cycles on a simulated VLIW SIMD machine
 - **Metric:** Clock cycles (lower is better), reward is `log2(baseline / best)`
@@ -75,10 +111,9 @@ Every environment follows the same 5-module pattern:
 - **Action:** Full-file rewrite of `perf_takehome.py`
 - **Tools:** `read_file`, `edit_file`, `run_tests`, `run_analysis`, `run_command`
 - **Curriculum:** 8 starting points from 147,734 cycles (naive) to 2,432 cycles (60x optimized)
-- **Sandbox:** Directory copies, file-level reset
 - **Range:** Baseline 147,734 → best known ~1,363 cycles (108x speedup)
 
-### nanochat/ — autoresearch optimization
+### problems/nanochat/ — autoresearch optimization
 
 - **Task:** Optimize `train.py` to minimize `val_bpb` (validation bits per byte)
 - **Metric:** val_bpb (lower is better), reward is `(baseline - best) / 0.02`
@@ -88,32 +123,22 @@ Every environment follows the same 5-module pattern:
 - **Sandbox:** Git branch isolation with `CUDA_VISIBLE_DEVICES` pinning
 - **Range:** ~0.02 val_bpb improvement is strong (Karpathy's level from ~90 experiments)
 
-## Reward design patterns
+## Reward design
 
 All environments combine:
 1. **Primary reward** — log-scaled or normalized improvement over baseline
 2. **Process reward** — monotonic improvement fraction (rewards systematic exploration)
-3. **Auxiliary rewards** — small bonuses for good practices (notes, analysis)
-4. **Failure penalty** — linear penalty per incorrect/crashed attempt
-
-## Adding a new environment
-
-1. Create a directory: `my_env/`
-2. Write the 5 modules following the pattern above
-3. Add a `pyproject.toml` with a `verifiers.envs` entry point
-4. Add a `rl.toml` for training config
-5. Write a `spec.md` documenting the MDP
-6. See `docs/ideas.md` for proposed environments
+3. **Failure penalty** — linear penalty per incorrect/crashed attempt
 
 ## Training
 
 ```bash
-# Install environment
-cd kernel && pip install -e .
+# Install framework
+pip install -e .
 
-# Run manual episode (requires vLLM server)
-python test_episode.py
+# Run manual episode test
+python test_run.py
 
 # Train with prime-rl
-prime-rl train --config rl.toml
+prime-rl train --config problems/kernel/rl.toml
 ```
