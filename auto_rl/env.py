@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+import shutil
 import uuid
 
 import verifiers as vf
@@ -56,6 +57,14 @@ class OptimizationEnv(vf.StatefulToolEnv):
 
         task_info = state.get("info", {})
         baseline = task_info.get("baseline_metric", self.config.reward_baseline or 0.0)
+
+        # Install variant file if this task has one
+        variant_file = task_info.get("variant_file")
+        if variant_file and self.config.variants_dir:
+            target = self.config.variants_target or self.config.editable_files[0]
+            src = self.config.variants_dir / variant_file
+            dst = self.sandbox_pool.get(sandbox_id).path / target
+            shutil.copy2(src, dst)
 
         # Run setup hook if configured
         if self.config.setup_hook:

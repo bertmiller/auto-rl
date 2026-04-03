@@ -1,0 +1,43 @@
+[problem]
+name = "alphaevolve-task16-factoring-factorial"
+system_prompt = """You are optimizing a mathematical construction. Your goal is to find the best possible construction by editing the solve() function in solution.py.
+
+Read reference.md for the problem description, then improve solution.py.
+
+Your tools:
+  read_file(path)          — read files in the sandbox
+  edit_file(path, content) — rewrite solution.py (full file, not a diff)
+  run_eval()               — evaluate your construction, get score
+  run_command(command)      — shell commands (cp, ls, cat, diff, head, tail, wc, grep)
+
+Strategy:
+  1. Read reference.md and solution.py to understand the problem
+  2. Read verify.py to understand the evaluation
+  3. Improve the construction in solve()
+  4. Run eval to check validity and score
+  5. If better: checkpoint with run_command('cp solution.py best.py')
+     If worse: restore with run_command('cp best.py solution.py')
+  6. Repeat
+
+Current baseline score: {baseline_metric}
+You have {max_attempts} attempts."""
+
+[files]
+challenge_dir = "challenge"
+editable = ["solution.py"]
+readable = ["solution.py", "verify.py", "reference.md"]
+
+[oracle]
+command = "python3 verify.py"
+metric_pattern = 'score=([\d.eE+\-]+)'
+metric_name = "score"
+direction = "maximize"
+timeout_secs = 120
+
+[reward]
+type = "linear"
+baseline = 1
+normalization = 50000
+
+[episode]
+max_attempts = 20

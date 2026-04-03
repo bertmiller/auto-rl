@@ -16,6 +16,13 @@ else:
 
 
 @dataclass
+class DatasetVariant:
+    """A starting-point variant for curriculum training."""
+    file: str          # filename in variants_dir
+    baseline: float    # baseline metric for this variant
+
+
+@dataclass
 class ProblemConfig:
     name: str
     system_prompt: str
@@ -36,6 +43,9 @@ class ProblemConfig:
     reset_hook: str | None = None
     extra_tools: list[str] = field(default_factory=list)
     dataset_repeat: int = 10_000
+    variants: list[DatasetVariant] = field(default_factory=list)
+    variants_dir: Path | None = None
+    variants_target: str | None = None  # defaults to first editable file
     extra: dict[str, Any] = field(default_factory=dict)
 
     def render_system_prompt(self, **kwargs) -> str:
@@ -63,8 +73,18 @@ def load_config(toml_path: str | Path) -> ProblemConfig:
     reward = raw.get("reward", {})
     episode = raw.get("episode", {})
     plugins = raw.get("plugins", {})
+    ds = raw.get("dataset", {})
 
     challenge_dir = toml_path.parent / files.get("challenge_dir", "challenge")
+
+    # Parse [dataset] variants
+    variants = [
+        DatasetVariant(file=v["file"], baseline=v["baseline"])
+        for v in ds.get("variants", [])
+    ]
+    variants_dir = None
+    if "variants_dir" in ds:
+        variants_dir = toml_path.parent / ds["variants_dir"]
 
     return ProblemConfig(
         name=prob["name"],
@@ -86,5 +106,8 @@ def load_config(toml_path: str | Path) -> ProblemConfig:
         reset_hook=plugins.get("reset_hook"),
         extra_tools=plugins.get("extra_tools", []),
         dataset_repeat=episode.get("dataset_repeat", 10_000),
+        variants=variants,
+        variants_dir=variants_dir,
+        variants_target=ds.get("target"),
         extra=raw,
     )

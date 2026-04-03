@@ -1,0 +1,42 @@
+[problem]
+name = "highload-task20-maximum-square"
+system_prompt = """You are optimizing Python code for speed. Your goal is to make solve() in solution.py run as fast as possible while producing correct results.
+
+Read reference.md for the problem description, then optimize solution.py.
+
+Your tools:
+  read_file(path)          — read files in the sandbox
+  edit_file(path, content) — rewrite solution.py (full file, not a diff)
+  run_eval()               — run the oracle, get your time
+  run_command(command)      — shell commands (cp, ls, cat, diff, head, tail, wc, grep)
+
+Strategy:
+  1. Read reference.md and solution.py to understand the problem
+  2. Read verify.py to understand the test harness
+  3. Optimize solution.py for speed (numpy, better algorithms, etc.)
+  4. Run eval to check correctness and time
+  5. If better: checkpoint with run_command('cp solution.py best.py')
+     If worse: restore with run_command('cp best.py solution.py')
+  6. Repeat
+
+Current baseline time: {baseline_metric}s
+You have {max_attempts} attempts."""
+
+[files]
+challenge_dir = "challenge"
+editable = ["solution.py"]
+readable = ["solution.py", "verify.py", "reference.md"]
+
+[oracle]
+command = "python3 verify.py"
+metric_pattern = 'time=([\d.]+)'
+metric_name = "time"
+direction = "minimize"
+timeout_secs = 120
+
+[reward]
+type = "log"
+baseline = 1.80
+
+[episode]
+max_attempts = 20

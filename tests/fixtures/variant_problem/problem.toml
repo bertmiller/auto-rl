@@ -1,0 +1,47 @@
+[problem]
+name = "sample-variants"
+system_prompt = """You are an optimization agent. Edit solution.py to maximize the score.
+Current baseline: {baseline_metric}.
+
+Your tools:
+  read_file(path)        — read solution.py or verify.py
+  edit_file(path, content) — rewrite solution.py (full file)
+  run_eval()             — run verification, get score
+  run_command(command)    — run shell commands (cp, ls, diff, cat, head, tail, wc, grep)
+
+You have {max_attempts} attempts. Be systematic."""
+
+[files]
+challenge_dir = "challenge"
+editable = ["solution.py"]
+readable = ["solution.py", "verify.py"]
+
+[oracle]
+command = "python3 verify.py"
+metric_pattern = 'score=([\d.]+)'
+metric_name = "score"
+direction = "maximize"
+timeout_secs = 30
+
+[reward]
+type = "log"
+
+[episode]
+max_attempts = 10
+sandbox_pool_size = 2
+
+[dataset]
+variants_dir = "starting_points"
+target = "solution.py"
+
+[[dataset.variants]]
+file = "baseline.py"
+baseline = 1.0
+
+[[dataset.variants]]
+file = "variant_5x.py"
+baseline = 5.0
+
+[[dataset.variants]]
+file = "variant_10x.py"
+baseline = 10.0

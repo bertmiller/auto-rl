@@ -152,6 +152,20 @@ sandbox_pool_size = 4                 # concurrent sandboxes for parallel rollou
 | `sandbox_pool_size` | `4` | Number of sandbox copies for parallel rollouts |
 | `dataset_repeat` | `10000` | How many times to repeat the task in the dataset |
 
+**`[dataset]`** (optional, for starting-point variants)
+
+| Field | Default | Description |
+|---|---|---|
+| `variants_dir` | — | Directory containing variant files, relative to TOML |
+| `target` | first editable file | Which challenge file the variant replaces at episode start |
+
+**`[[dataset.variants]]`** (one per starting point)
+
+| Field | Required | Description |
+|---|---|---|
+| `file` | yes | Filename within `variants_dir` |
+| `baseline` | yes | Baseline metric for this variant |
+
 **`[plugins]`** (optional, for advanced use)
 
 | Field | Description |
@@ -186,26 +200,75 @@ async def test():
 asyncio.run(test())
 ```
 
+## Starting-point variants
+
+For curriculum training, you can define multiple starting points at different difficulty levels. The framework cycles through them so the agent trains on all variants.
+
+```
+my_problem/
+  problem.toml
+  challenge/
+    solution.py
+    verify.py
+  starting_points/
+    baseline.py         # naive solution, score=1.0
+    variant_5x.py       # partially optimized, score=5.0
+    variant_10x.py      # well optimized, score=10.0
+```
+
+Add a `[dataset]` section to the config:
+
+```toml
+[dataset]
+variants_dir = "starting_points"   # directory with variant files
+target = "solution.py"             # which challenge file to replace
+
+[[dataset.variants]]
+file = "baseline.py"
+baseline = 1.0
+
+[[dataset.variants]]
+file = "variant_5x.py"
+baseline = 5.0
+
+[[dataset.variants]]
+file = "variant_10x.py"
+baseline = 10.0
+```
+
+At the start of each episode, the framework copies the variant file into the sandbox, replacing `target`. Each variant gets its own baseline in the dataset, so:
+
+- The system prompt `{baseline_metric}` is filled per-variant
+- Reward is calculated relative to the variant's baseline
+- With `"log"` reward, a 2x improvement gives the same reward regardless of which variant it came from
+
+When `[dataset]` is omitted, the framework falls back to a single task repeated `dataset_repeat` times using `[reward].baseline`.
+
+The system prompt template has access to `{baseline_metric}`, so you can tell the agent its starting point:
+
+```toml
+[problem]
+system_prompt = """Your current baseline is {baseline_metric}. Improve it.
+You have {max_attempts} attempts."""
+```
+
 ## Adding plugin hooks
 
-For problems that need custom setup (e.g. installing a starting-point variant, running a baseline, GPU pinning):
+For problems that need custom setup beyond variant installation (e.g. running a baseline measurement, GPU pinning):
 
 ```python
 # my_hooks.py
 
-async def setup_variant(sandbox_id, state, pool, config):
-    """Install a starting-point variant based on task info."""
-    import shutil
-    variant = state.get("info", {}).get("variant_file", "baseline.py")
+async def setup_resources(sandbox_id, state, pool, config):
+    """Custom setup at episode start (runs after variant installation)."""
     sandbox = pool.get(sandbox_id)
-    src = config.challenge_dir.parent / "variants" / variant
-    shutil.copy2(src, sandbox.path / "solution.py")
+    # e.g. pin GPU, install dependencies, generate data
 ```
 
 ```toml
 # problem.toml
 [plugins]
-setup_hook = "my_hooks:setup_variant"
+setup_hook = "my_hooks:setup_resources"
 ```
 
 For extra tools:
